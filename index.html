@@ -42,6 +42,8 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 .blk .blk{background:var(--bg);margin:10px 0 0}
 .bh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .bh .sp{flex:1}
+.rr{font-size:22px;font-weight:650;color:var(--ac)}
+.big{font-size:28px}
 </style>
 </head>
 <body>
@@ -53,7 +55,14 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     <div class="card"><div class="k">股票市值（折合台幣）</div><div class="v" id="sAssets"></div></div>
     <div class="card"><div class="k">總負債</div><div class="v" id="sDebt"></div></div>
     <div class="card"><div class="k">淨值</div><div class="v" id="sNet"></div></div>
-    <div class="card"><div class="k">負債 / 股票市值</div><div class="v" id="sRatio"></div></div>
+    <div class="card"><div class="k">股票市值 / 負債</div><div class="v" id="sRatio"></div></div>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="k">個股 佔整個資產</div><div class="v big" id="t_stock"></div></div>
+    <div class="card"><div class="k">CLEC 佔整個資產</div><div class="v big" id="t_clec"></div></div>
+    <div class="card"><div class="k">原型 佔 CLEC</div><div class="v big" id="t_proto"></div></div>
+    <div class="card"><div class="k">槓桿 x2 佔 CLEC</div><div class="v big" id="t_lev"></div></div>
+    <div class="card"><div class="k">類現金 佔 CLEC</div><div class="v big" id="t_cash"></div></div>
   </div>
 
   <div class="card">
@@ -175,8 +184,8 @@ function pull(){
 
 var G=[{k:"stock",n:"個股"},{k:"proto",n:"原型"},{k:"lev",n:"槓桿 x2"},{k:"cash",n:"類現金"}];
 var TH='<thead><tr><th>股票</th><th>幣別</th><th>股數</th><th>成本價</th><th>現價</th><th>市值</th><th>損益</th><th>折合台幣</th><th></th></tr></thead>';
-function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　'+lbl+' <b id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
-$("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b id="v_clec"></b>　佔整個資產 <b id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
+function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
+$("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b id="v_clec"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
 /* ---------- 畫面 ---------- */
 function rows(){
   $("up").value=S.up;$("dn").value=S.dn;
@@ -203,8 +212,8 @@ function calc(){
   });
   var Cq=tg.proto+tg.lev+tg.cash,pc=function(x,y){return y?(x/y*100).toFixed(1)+"%":"—"};
   $("r_stock").textContent=pc(tg.stock,A);$("v_stock").textContent=fmt(tg.stock);
-  $("r_clec").textContent=pc(Cq,A);$("v_clec").textContent=fmt(Cq);
-  ["proto","lev","cash"].forEach(function(k){$("r_"+k).textContent=pc(tg[k],Cq);$("v_"+k).textContent=fmt(tg[k])});
+  $("r_clec").textContent=pc(Cq,A);$("v_clec").textContent=fmt(Cq);$("t_stock").textContent=pc(tg.stock,A);$("t_clec").textContent=pc(Cq,A);
+  ["proto","lev","cash"].forEach(function(k){$("r_"+k).textContent=pc(tg[k],Cq);$("t_"+k).textContent=pc(tg[k],Cq);$("v_"+k).textContent=fmt(tg[k])});
   var upv=gl>0?gl*S.up/100:0,dnr=A*S.dn/100,dnv=Math.min(dnr,tg.cash);
   $("rb").innerHTML="漲：賣出槓桿 ETF 約 <b>"+fmt(upv)+"</b> 元（槓桿損益 "+fmt(gl)+" 的 "+S.up+"%），轉進類現金。<br>跌：賣出類現金約 <b>"+fmt(dnv)+"</b> 元（整個資產 "+fmt(A)+" 的 "+S.dn+"%"+(dnr>tg.cash?"，已受類現金市值限制":"")+"），逢低加碼買回槓桿 ETF。";
   var D=0,I=0,P=0;
@@ -212,7 +221,7 @@ function calc(){
   var net=A-D,m=Math.max(A,D,1),g=A*S.ret/100;
   $("sAssets").textContent=fmt(A);$("sDebt").textContent=fmt(D);
   $("sNet").textContent=fmt(net);$("sNet").className="v "+(net>=0?"":"dn");
-  $("sRatio").textContent=A?pct(D/A*100):"—";
+  $("sRatio").textContent=D?pct(A/D*100):"—";
   $("bA").style.width=(A/m*100)+"%";$("bD").style.width=(D/m*100)+"%";
   $("retV").textContent=S.ret.toFixed(1)+"%";
   $("gain").textContent=fmt(g);$("int").textContent=fmt(I);
