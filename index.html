@@ -189,8 +189,8 @@ function order(arr,so,vf){var ix=arr.map(function(_,i){return i});if(so)ix.sort(
 function marks(){document.querySelectorAll("th[data-sk]").forEach(function(th){var so=th.getAttribute("data-t")==="d"?SO.d:SO.s;th.textContent=th.getAttribute("data-b")+(so&&so.k===th.getAttribute("data-sk")?(so.d<0?" ▼":" ▲"):"")})}
 var G=[{k:"stock",n:"個股"},{k:"proto",n:"原型"},{k:"lev",n:"槓桿 x2"},{k:"cash",n:"類現金"}];
 var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
-function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
-$("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b id="v_clec"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
+function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
+$("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b id="v_clec"></b>　損益 <b id="p_clec"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
 /* ---------- 畫面 ---------- */
 function rows(){
   $("up").value=S.up;$("dn").value=S.dn;
@@ -208,16 +208,18 @@ function rows(){
   calc();
 }
 function calc(){
-  marks();var A=0,tg={stock:0,proto:0,lev:0,cash:0},gl=0,gp=0;
+  marks();var tp={stock:0,proto:0,lev:0,cash:0},A=0,tg={stock:0,proto:0,lev:0,cash:0},gl=0,gp=0;
   S.stocks.forEach(function(s,i){
-    var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;if(s.g==="proto")gp+=pl*r;if(s.g==="lev")gl+=pl*r;
+    var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;if(s.g==="proto")gp+=pl*r;if(s.g==="lev")gl+=pl*r;
     $("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
     var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
     el.className=pl>=0?"up":"dn";
   });
   var Cq=tg.proto+tg.lev+tg.cash,pc=function(x,y){return y?(x/y*100).toFixed(1)+"%":"—"};
   $("r_stock").textContent=pc(tg.stock,A);$("v_stock").textContent=fmt(tg.stock);
-  $("r_clec").textContent=pc(Cq,A);$("v_clec").textContent=fmt(Cq);$("t_stock").textContent=pc(tg.stock,A);$("t_clec").textContent=pc(Cq,A);
+  $("r_clec").textContent=pc(Cq,A);$("v_clec").textContent=fmt(Cq);
+  var sp=function(id,x){var e=$(id);e.textContent=(x>0?"+":"")+fmt(x);e.className=x>0?"up":x<0?"dn":""};
+  sp("p_stock",tp.stock);sp("p_clec",tp.proto+tp.lev+tp.cash);["proto","lev","cash"].forEach(function(k){sp("p_"+k,tp[k])});$("t_stock").textContent=pc(tg.stock,A);$("t_clec").textContent=pc(Cq,A);
   ["proto","lev","cash"].forEach(function(k){$("r_"+k).textContent=pc(tg[k],Cq);$("t_"+k).textContent=pc(tg[k],Cq);$("v_"+k).textContent=fmt(tg[k])});
   var upv=gl>0?gl*S.up/100:0,dnr=A*S.dn/100,dnv=Math.min(dnr,tg.cash);
   $("rb").innerHTML="原型損益 <b>"+fmt(gp)+"</b> 元（"+(gp>0?"漲":gp<0?"跌":"持平")+"）。<br>"+(gp>0?"漲：賣出槓桿 ETF 約 <b>"+fmt(upv)+"</b> 元（槓桿損益 "+fmt(gl)+" 的 "+S.up+"%），轉進類現金。":gp<0?"跌：賣出類現金約 <b>"+fmt(dnv)+"</b> 元（整個資產 "+fmt(A)+" 的 "+S.dn+"%"+(dnr>tg.cash?"，已受類現金市值限制":"")+"），逢低加碼買回槓桿 ETF。":"目前不需要動作。");
