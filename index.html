@@ -58,11 +58,11 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     <div class="card"><div class="k">股票市值 / 負債</div><div class="v" id="sRatio"></div></div>
   </div>
   <div class="grid">
-    <div class="card"><div class="k">個股 佔整個資產</div><div class="v big" id="t_stock"></div></div>
-    <div class="card"><div class="k">CLEC 佔整個資產</div><div class="v big" id="t_clec"></div></div>
-    <div class="card"><div class="k">原型 佔 CLEC</div><div class="v big" id="t_proto"></div></div>
-    <div class="card"><div class="k">槓桿 x2 佔 CLEC</div><div class="v big" id="t_lev"></div></div>
-    <div class="card"><div class="k">類現金 佔 CLEC</div><div class="v big" id="t_cash"></div></div>
+    <div class="card"><div class="k">個股 佔整個資產</div><div class="v big" id="t_stock"></div><div class="k" style="margin-top:4px">市值 <b id="tv_stock"></b></div><div class="k">損益 <b id="tp_stock"></b></div></div>
+    <div class="card"><div class="k">CLEC 佔整個資產</div><div class="v big" id="t_clec"></div><div class="k" style="margin-top:4px">市值 <b id="tv_clec"></b></div><div class="k">損益 <b id="tp_clec"></b></div></div>
+    <div class="card"><div class="k">原型 佔 CLEC</div><div class="v big" id="t_proto"></div><div class="k" style="margin-top:4px">市值 <b id="tv_proto"></b></div><div class="k">損益 <b id="tp_proto"></b></div></div>
+    <div class="card"><div class="k">槓桿 x2 佔 CLEC</div><div class="v big" id="t_lev"></div><div class="k" style="margin-top:4px">市值 <b id="tv_lev"></b></div><div class="k">損益 <b id="tp_lev"></b></div></div>
+    <div class="card"><div class="k">類現金 佔 CLEC</div><div class="v big" id="t_cash"></div><div class="k" style="margin-top:4px">市值 <b id="tv_cash"></b></div><div class="k">損益 <b id="tp_cash"></b></div></div>
   </div>
 
   <div class="card">
@@ -232,7 +232,8 @@ function calc(){
   $("r_stock").textContent=pc(tg.stock,A);$("v_stock").textContent=fmt(tg.stock);
   $("r_clec").textContent=pc(Cq,A);$("v_clec").textContent=fmt(Cq);
   var sp=function(id,x){var e=$(id);e.textContent=(x>0?"+":"")+fmt(x);e.className=x>0?"up":x<0?"dn":""};
-  sp("p_stock",tp.stock);sp("p_clec",tp.proto+tp.lev+tp.cash);["proto","lev","cash"].forEach(function(k){sp("p_"+k,tp[k])});$("t_stock").textContent=pc(tg.stock,A);$("t_clec").textContent=pc(Cq,A);
+  sp("p_stock",tp.stock);sp("p_clec",tp.proto+tp.lev+tp.cash);["proto","lev","cash"].forEach(function(k){sp("p_"+k,tp[k])});
+  [["stock",tg.stock,tp.stock],["clec",Cq,tp.proto+tp.lev+tp.cash],["proto",tg.proto,tp.proto],["lev",tg.lev,tp.lev],["cash",tg.cash,tp.cash]].forEach(function(x){$("tv_"+x[0]).textContent=fmt(x[1]);sp("tp_"+x[0],x[2])});$("t_stock").textContent=pc(tg.stock,A);$("t_clec").textContent=pc(Cq,A);
   ["proto","lev","cash"].forEach(function(k){$("r_"+k).textContent=pc(tg[k],Cq);$("t_"+k).textContent=pc(tg[k],Cq);$("v_"+k).textContent=fmt(tg[k])});
   var upv=gl>0?gl*S.up/100:0,dnr=A*S.dn/100,dnv=Math.min(dnr,tg.cash);
   $("rb").innerHTML="原型損益 <b>"+fmt(gp)+"</b> 元（"+(gp>0?"漲":gp<0?"跌":"持平")+"）。<br>"+(gp>0?"漲：賣出槓桿 ETF 約 <b>"+fmt(upv)+"</b> 元（槓桿損益 "+fmt(gl)+" 的 "+S.up+"%），轉進類現金。":gp<0?"跌：賣出類現金約 <b>"+fmt(dnv)+"</b> 元（整個資產 "+fmt(A)+" 的 "+S.dn+"%"+(dnr>tg.cash?"，已受類現金市值限制":"")+"），逢低加碼買回槓桿 ETF。":"目前不需要動作。");
