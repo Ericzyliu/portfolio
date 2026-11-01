@@ -130,13 +130,26 @@ function tm(){return new Date().toLocaleTimeString("zh-TW")}
 function norm(o){if(!o.fx)o.fx=32;if(o.ret==null)o.ret=6;if(o.up==null)o.up=30;if(o.dn==null)o.dn=2;o.stocks.forEach(function(s){if(!s.cur)s.cur="TWD";if(!s.g)s.g="stock"});return o}
 function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.stocks&&o.debts)return norm(o)}}catch(e){}return norm(JSON.parse(JSON.stringify(SAMPLE)))}
 var S=load(),quiet=false,synced=false,tmr=null;
-function setSync(t){$("sync").textContent=t}
+function setSync(t){$("sync").textContent=t+"（本頁已呼叫 GitHub "+reqN+" 次）"}
 function save(){if(!quiet)S.updated=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!quiet)push()}
 
 /* ---------- GitHub Gist 同步 ---------- */
+var reqN=0,etag="",lastRu=0,blockUntil=0;
 function ghf(path,opt){
-  opt=opt||{};opt.headers={"Authorization":"Bearer "+cfg.gh,"Accept":"application/vnd.github+json"};
-  return fetch(GH+path,opt).then(function(r){if(r.ok)return r.json();return r.json().catch(function(){return{}}).then(function(b){var m=String(b.message||"");throw new Error("GitHub "+r.status+(r.status===401?"（token 無效）":"")+(m?"："+m:"")+(r.headers.get("x-ratelimit-remaining")==="0"?"（API 次數用完，稍後再試）":""))})});
+  opt=opt||{};var inm=opt.inm;delete opt.inm;
+  opt.headers={"Authorization":"Bearer "+cfg.gh,"Accept":"application/vnd.github+json"};
+  if(inm)opt.headers["If-None-Match"]=inm;
+  if(Date.now()<blockUntil)return Promise.reject(new Error("GitHub API 次數用完，約 "+new Date(blockUntil).toLocaleTimeString("zh-TW")+" 恢復後自動重試"));
+  reqN++;
+  return fetch(GH+path,opt).then(function(r){
+    if(r.status===304)return {nm:true};
+    if(r.ok){if(!opt.method&&path.indexOf("/gists/")===0)etag=r.headers.get("etag")||"";return r.json()}
+    return r.json().catch(function(){return{}}).then(function(b){
+      var m=String(b.message||"").split(". If you reach")[0],rs=r.headers.get("x-ratelimit-reset");
+      if(r.headers.get("x-ratelimit-remaining")==="0"&&rs){blockUntil=(+rs)*1000;m="API 次數用完，約 "+new Date(blockUntil).toLocaleTimeString("zh-TW")+" 恢復後自動重試"}
+      throw new Error("GitHub "+r.status+(r.status===401?"（token 無效）":"")+(m?"："+m:""));
+    });
+  });
 }
 function findGist(){
   if(cfg.gid)return Promise.resolve(cfg.gid);
@@ -155,7 +168,7 @@ function push(){
   setSync("同步中…");clearTimeout(tmr);
   tmr=setTimeout(function(){
     var f={};f[FILE]={content:JSON.stringify(S)};
-    ghf("/gists/"+cfg.gid,{method:"PATCH",body:JSON.stringify({files:f})}).then(function(){setSync("☁️ 已同步（"+tm()+"）")}).catch(function(e){setSync("同步失敗："+e.message+"，資料仍保存在這個裝置")});
+    ghf("/gists/"+cfg.gid,{method:"PATCH",body:JSON.stringify({files:f})}).then(function(){lastRu=S.updated||0;etag="";setSync("☁️ 已同步（"+tm()+"）")}).catch(function(e){setSync("同步失敗："+e.message+"，資料仍保存在這個裝置")});
   },800);
 }
 function editing(){var a=document.activeElement;return a&&a.tagName==="INPUT"&&a.id!=="ret"&&a.id!=="cgh"&&a.id!=="cfh"&&a.id!=="cfm"}
@@ -165,13 +178,13 @@ function pull(){
   setSync("同步中…");
   return findGist().then(function(id){
     if(!id){if(!S.updated)S.updated=Date.now();return createGist().then(function(){synced=true;setSync("☁️ 已建立雲端資料（"+tm()+"）")})}
-    return ghf("/gists/"+id).then(function(g){
+    return ghf("/gists/"+id,{inm:etag}).then(function(g){if(g.nm){synced=true;if((S.updated||0)>lastRu)push();setSync("☁️ 已同步（"+tm()+"）");return}
       var f=g.files&&g.files[FILE];
       synced=true;
       if(!f||!f.content){if(!S.updated)S.updated=Date.now();push();return}
       var r=JSON.parse(f.content);
       if(!r||!r.stocks||!r.debts)throw new Error("雲端資料格式不對");
-      var ru=r.updated||0,lu=S.updated||0;
+      var ru=r.updated||0,lu=S.updated||0;lastRu=ru;
       if(ru>lu){if(editing()){setSync("雲端有新資料，編輯完會自動套用");return}applyRemote(r)}
       else if(lu>ru){push();return}
       setSync("☁️ 已同步（"+tm()+"）");
@@ -300,7 +313,7 @@ $("rf").onclick=refresh;
 $("cgh").value=cfg.gh;$("cfh").value=cfg.fh;$("cfm").value=cfg.fm;
 $("csave").onclick=function(){
   var g=$("cgh").value.trim();
-  if(g!==cfg.gh){cfg.gid="";synced=false}
+  if(g!==cfg.gh){cfg.gid="";synced=false;etag="";blockUntil=0}
   cfg.gh=g;cfg.fh=$("cfh").value.trim();cfg.fm=$("cfm").value.trim();
   saveCfg();$("cmsg").textContent="已儲存在這個裝置";
   pull();
@@ -310,7 +323,7 @@ $("csave").onclick=function(){
 $("ret").value=S.ret;$("fx").value=S.fx;
 quiet=true;rows();quiet=false;
 pull();
-setInterval(function(){if(!document.hidden)pull()},60000);
+setInterval(function(){if(!document.hidden)pull()},120000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
 })();
 </script>
