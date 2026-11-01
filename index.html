@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>股票與負債總覽</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1f23;--mu:#6b7078;--bd:#e3e1da;--ac:#1f6f5c;--up:#c0392b;--dn:#1e8449;--debt:#b9532b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14161a;--card:#1d2026;--tx:#eceef1;--mu:#9aa0a9;--bd:#2b2f37;--ac:#4fb89e;--up:#ff6b5e;--dn:#4cc27f;--debt:#e58a5f}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14161a;--card:#1d2026;--tx:#eceef1;--mu:#9aa0a9;--bd:#2b2f37;--ac:#4fb89e;--up:#ff6b5e;--dn:#4cc27f;--debt:#e58a5f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.5}
+main{max-width:920px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mu);font-size:13px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.k{font-size:12px;color:var(--mu)}
+.v{font-size:21px;font-weight:650;margin-top:2px}
+h2{font-size:16px;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:center}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:780px;font-size:14px}
+th{font-weight:500;color:var(--mu);font-size:12px;text-align:right;padding:6px 6px}
+th:first-child,td:first-child{text-align:left}
+td{padding:4px 6px;text-align:right;border-top:1px solid var(--bd);white-space:nowrap}
+input{width:100%;min-width:70px;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px;font:inherit;text-align:right}
+td:first-child input{text-align:left;min-width:90px}
+select{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px;font:inherit}
+input:focus{outline:2px solid var(--ac);outline-offset:0}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:6px 12px}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.x{padding:2px 8px;color:var(--mu)}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.bar{height:14px;border-radius:7px;background:var(--bd);overflow:hidden;margin:6px 0 10px}
+.bar i{display:block;height:100%;border-radius:7px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
+.note{font-size:14px;margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--bd)}
+.foot{color:var(--mu);font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+  <h1>股票與負債總覽</h1>
+  <div class="sub">資料會同步到你自己 GitHub 帳號下的私密 Gist，電腦與手機各設定一次就能看到同一份。總覽一律折合新台幣，美股請在持股選 USD 並設定匯率。下方為範例數字，請改成你自己的。</div>
+
+  <div class="grid">
+    <div class="card"><div class="k">股票市值（折合台幣）</div><div class="v" id="sAssets"></div></div>
+    <div class="card"><div class="k">總負債</div><div class="v" id="sDebt"></div></div>
+    <div class="card"><div class="k">淨值</div><div class="v" id="sNet"></div></div>
+    <div class="card"><div class="k">負債 / 股票市值</div><div class="v" id="sRatio"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="k">股票市值 vs 負債</div>
+    <div class="bar"><i id="bA" style="background:var(--ac)"></i></div>
+    <div class="bar"><i id="bD" style="background:var(--debt)"></i></div>
+  </div>
+
+  <div class="card row" style="margin-top:18px"><label for="fx">匯率 USD → TWD</label><input type="number" step="any" id="fx" style="width:110px"><button class="p" id="rf">更新報價</button><span class="k" id="rfs">按下後自動更新美股現價、台股收盤價與匯率</span></div>
+  <h2>持股 <button class="p" id="addS">＋ 新增</button></h2>
+  <div class="card scroll"><table>
+    <thead><tr><th>股票</th><th>幣別</th><th>股數</th><th>成本價</th><th>現價</th><th>市值</th><th>損益</th><th>折合台幣</th><th></th></tr></thead>
+    <tbody id="stocks"></tbody>
+  </table></div>
+
+  <h2>負債 <button class="p" id="addD">＋ 新增</button></h2>
+  <div class="card scroll"><table>
+    <thead><tr><th>項目</th><th>餘額</th><th>年利率 %</th><th>月繳</th><th>年利息</th><th></th></tr></thead>
+    <tbody id="debts"></tbody>
+  </table></div>
+
+  <h2>報酬 vs 利息</h2>
+  <div class="card">
+    <div class="row">
+      <label for="ret">假設股票年報酬率</label>
+      <input type="range" id="ret" min="-10" max="20" step="0.5">
+      <b id="retV"></b>
+    </div>
+    <div class="grid" style="margin:12px 0 0">
+      <div class="card"><div class="k">預期年收益</div><div class="v" id="gain"></div></div>
+      <div class="card"><div class="k">年利息支出</div><div class="v" id="int"></div></div>
+      <div class="card"><div class="k">加權平均利率</div><div class="v" id="wr"></div></div>
+      <div class="card"><div class="k">每月還款合計</div><div class="v" id="pay"></div></div>
+    </div>
+    <div class="note" id="msg"></div>
+  </div>
+
+  <h2>設定</h2>
+  <details class="card"><summary>⚙ 連線設定（每個裝置各填一次，只存在這個裝置的瀏覽器）</summary>
+    <div style="display:grid;gap:10px;margin-top:12px">
+      <label class="k">GitHub token（classic，只勾 gist 權限）<input type="password" id="cgh" autocomplete="off" style="text-align:left;margin-top:4px"></label>
+      <label class="k">Finnhub API key（美股報價）<input type="password" id="cfh" autocomplete="off" style="text-align:left;margin-top:4px"></label>
+      <label class="k">FinMind token（選填，台股報價上限較高）<input type="password" id="cfm" autocomplete="off" style="text-align:left;margin-top:4px"></label>
+      <div class="row"><button class="p" id="csave">儲存並同步</button><span class="k" id="cmsg"></span></div>
+    </div>
+  </details>
+
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<button class="x" id="reset" style="margin-left:8px">重設資料</button></div>
+</main>
+<script>
+(function(){
+var KEY="portfolio-v1",CFG="portfolio-cfg-v1";
+var GH="https://api.github.com",DESC="portfolio-tracker-data",FILE="portfolio.json";
+var SAMPLE={fx:32,stocks:[{sym:"2330 台積電",cur:"TWD",qty:1000,cost:600,price:900},{sym:"0050 元大台灣50",cur:"TWD",qty:2000,cost:120,price:150},{sym:"AAPL",cur:"USD",qty:20,cost:150,price:230}],debts:[{name:"房貸",bal:5000000,rate:2.2,pay:28000},{name:"信貸",bal:400000,rate:4.5,pay:12000}],ret:6};
+var cfg={gh:"",fh:"",fm:"",gid:""};
+try{var c0=JSON.parse(localStorage.getItem(CFG)||"{}");for(var k0 in c0)cfg[k0]=c0[k0]}catch(e){}
+function saveCfg(){try{localStorage.setItem(CFG,JSON.stringify(cfg))}catch(e){}}
+var $=function(id){return document.getElementById(id)};
+var fmt=function(n){return Math.round(n).toLocaleString("zh-TW")};
+var pct=function(n){return (isFinite(n)?n:0).toFixed(1)+"%"};
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+function tm(){return new Date().toLocaleTimeString("zh-TW")}
+function norm(o){if(!o.fx)o.fx=32;if(o.ret==null)o.ret=6;o.stocks.forEach(function(s){if(!s.cur)s.cur="TWD"});return o}
+function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.stocks&&o.debts)return norm(o)}}catch(e){}return norm(JSON.parse(JSON.stringify(SAMPLE)))}
+var S=load(),quiet=false,synced=false,tmr=null;
+function setSync(t){$("sync").textContent=t}
+function save(){if(!quiet)S.updated=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!quiet)push()}
+
+/* ---------- GitHub Gist 同步 ---------- */
+function ghf(path,opt){
+  opt=opt||{};opt.headers={"Authorization":"Bearer "+cfg.gh,"Accept":"application/vnd.github+json"};
+  return fetch(GH+path,opt).then(function(r){if(!r.ok)throw new Error("GitHub "+r.status+(r.status===401?"（token 無效）":""));return r.json()});
+}
+function findGist(){
+  if(cfg.gid)return Promise.resolve(cfg.gid);
+  return ghf("/gists?per_page=100").then(function(l){
+    var g=l.filter(function(x){return x.description===DESC})[0];
+    if(g){cfg.gid=g.id;saveCfg();return g.id}
+    return null;
+  });
+}
+function createGist(){
+  var f={};f[FILE]={content:JSON.stringify(S)};
+  return ghf("/gists",{method:"POST",body:JSON.stringify({description:DESC,public:false,files:f})}).then(function(g){cfg.gid=g.id;saveCfg();return g.id});
+}
+function push(){
+  if(!cfg.gh||!synced||!cfg.gid)return;
+  setSync("同步中…");clearTimeout(tmr);
+  tmr=setTimeout(function(){
+    var f={};f[FILE]={content:JSON.stringify(S)};
+    ghf("/gists/"+cfg.gid,{method:"PATCH",body:JSON.stringify({files:f})}).then(function(){setSync("☁️ 已同步（"+tm()+"）")}).catch(function(e){setSync("同步失敗："+e.message+"，資料仍保存在這個裝置")});
+  },800);
+}
+function editing(){var a=document.activeElement;return a&&a.tagName==="INPUT"&&a.id!=="ret"&&a.id!=="cgh"&&a.id!=="cfh"&&a.id!=="cfm"}
+function applyRemote(r){S=norm(JSON.parse(JSON.stringify(r)));quiet=true;$("ret").value=S.ret;$("fx").value=S.fx;rows();quiet=false}
+function pull(){
+  if(!cfg.gh){synced=false;setSync("尚未設定 GitHub token：資料只存在這個裝置");return Promise.resolve()}
+  setSync("同步中…");
+  return findGist().then(function(id){
+    if(!id){if(!S.updated)S.updated=Date.now();return createGist().then(function(){synced=true;setSync("☁️ 已建立雲端資料（"+tm()+"）")})}
+    return ghf("/gists/"+id).then(function(g){
+      var f=g.files&&g.files[FILE];
+      synced=true;
+      if(!f||!f.content){if(!S.updated)S.updated=Date.now();push();return}
+      var r=JSON.parse(f.content);
+      if(!r||!r.stocks||!r.debts)throw new Error("雲端資料格式不對");
+      var ru=r.updated||0,lu=S.updated||0;
+      if(ru>lu){if(editing()){setSync("雲端有新資料，編輯完會自動套用");return}applyRemote(r)}
+      else if(lu>ru){push();return}
+      setSync("☁️ 已同步（"+tm()+"）");
+    });
+  }).catch(function(e){
+    if(/404/.test(e.message)){cfg.gid="";saveCfg()}
+    setSync("同步失敗："+e.message+"，資料仍保存在這個裝置");
+  });
+}
+
+/* ---------- 畫面 ---------- */
+function rows(){
+  $("stocks").innerHTML=S.stocks.map(function(s,i){
+    return '<tr><td><input data-t="s" data-i="'+i+'" data-f="sym" value="'+esc(s.sym)+'"></td>'+
+    '<td><select data-t="s" data-i="'+i+'" data-f="cur"><option value="TWD"'+(s.cur==="TWD"?" selected":"")+'>TWD</option><option value="USD"'+(s.cur==="USD"?" selected":"")+'>USD</option></select></td>'+
+    ['qty','cost','price'].map(function(f){return '<td><input type="number" step="any" data-t="s" data-i="'+i+'" data-f="'+f+'" value="'+s[f]+'"></td>'}).join('')+
+    '<td id="sv'+i+'"></td><td id="sp'+i+'"></td><td id="st'+i+'"></td><td><button class="x" data-del="s" data-i="'+i+'" aria-label="刪除">✕</button></td></tr>';
+  }).join('');
+  $("debts").innerHTML=S.debts.map(function(d,i){
+    return '<tr><td><input data-t="d" data-i="'+i+'" data-f="name" value="'+esc(d.name)+'"></td>'+
+    ['bal','rate','pay'].map(function(f){return '<td><input type="number" step="any" data-t="d" data-i="'+i+'" data-f="'+f+'" value="'+d[f]+'"></td>'}).join('')+
+    '<td id="di'+i+'"></td><td><button class="x" data-del="d" data-i="'+i+'" aria-label="刪除">✕</button></td></tr>';
+  }).join('');
+  calc();
+}
+function calc(){
+  var A=0;
+  S.stocks.forEach(function(s,i){
+    var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;
+    $("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
+    var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
+    el.className=pl>=0?"up":"dn";
+  });
+  var D=0,I=0,P=0;
+  S.debts.forEach(function(d,i){var it=d.bal*d.rate/100;D+=d.bal;I+=it;P+=+d.pay||0;$("di"+i).textContent=fmt(it)});
+  var net=A-D,m=Math.max(A,D,1),g=A*S.ret/100;
+  $("sAssets").textContent=fmt(A);$("sDebt").textContent=fmt(D);
+  $("sNet").textContent=fmt(net);$("sNet").className="v "+(net>=0?"":"dn");
+  $("sRatio").textContent=A?pct(D/A*100):"—";
+  $("bA").style.width=(A/m*100)+"%";$("bD").style.width=(D/m*100)+"%";
+  $("retV").textContent=S.ret.toFixed(1)+"%";
+  $("gain").textContent=fmt(g);$("int").textContent=fmt(I);
+  $("wr").textContent=D?pct(I/D*100):"—";$("pay").textContent=fmt(P);
+  var diff=g-I,wr=D?I/D*100:0;
+  $("msg").textContent=D===0?"目前沒有負債。":
+    diff>=0?"以 "+S.ret.toFixed(1)+"% 的假設，股票預期收益大約比利息多 "+fmt(diff)+" 元／年。但報酬並不保證，利息卻是固定要付的。":
+    "以 "+S.ret.toFixed(1)+"% 的假設，利息支出比股票預期收益多 "+fmt(-diff)+" 元／年。股票報酬需超過約 "+wr.toFixed(1)+"% 才能打平負債利率。";
+  save();
+}
+document.addEventListener("input",function(e){
+  var t=e.target;
+  if(t.id==="ret"){S.ret=parseFloat(t.value);calc();return}
+  if(t.id==="fx"){S.fx=parseFloat(t.value)||0;calc();return}
+  var ty=t.getAttribute("data-t");if(!ty)return;
+  var arr=ty==="s"?S.stocks:S.debts,f=t.getAttribute("data-f");
+  arr[+t.getAttribute("data-i")][f]=(f==="sym"||f==="name"||f==="cur")?t.value:(parseFloat(t.value)||0);
+  calc();
+});
+document.addEventListener("click",function(e){
+  var t=e.target,del=t.getAttribute&&t.getAttribute("data-del");
+  if(del){(del==="s"?S.stocks:S.debts).splice(+t.getAttribute("data-i"),1);rows()}
+});
+$("addS").onclick=function(){S.stocks.push({sym:"",cur:"TWD",qty:0,cost:0,price:0});rows()};
+$("addD").onclick=function(){S.debts.push({name:"",bal:0,rate:0,pay:0});rows()};
+$("reset").onclick=function(){if(confirm("要清除全部資料並回到範例嗎？（會同步清除雲端資料）")){S=norm(JSON.parse(JSON.stringify(SAMPLE)));$("ret").value=S.ret;$("fx").value=S.fx;rows()}};
+
+/* ---------- 報價 ---------- */
+var API_BASE_URL="https://finnhub.io/api/v1/quote?symbol=";
+var API_FOREX_URL="https://open.er-api.com/v6/latest/USD";
+var FINMIND_URL="https://api.finmindtrade.com/api/v4/data";
+var lastErr="";
+function tick(s){return String(s.sym||"").trim().split(/\s+/)[0].toUpperCase()}
+function tw(s,t,jobs,fail,hit){
+  if(!/^\d{4,6}[A-Z]?$/.test(t)){fail.push(t);return}
+  var from=new Date(Date.now()-14*864e5).toISOString().slice(0,10);
+  var u=FINMIND_URL+"?dataset=TaiwanStockPrice&data_id="+t+"&start_date="+from+(cfg.fm?"&token="+encodeURIComponent(cfg.fm):"");
+  jobs.push(fetch(u).then(function(r){return r.json()}).then(function(d){
+    var a=d&&d.data;
+    if(a&&a.length&&a[a.length-1].close>0){s.price=a[a.length-1].close;hit()}else fail.push(t)
+  }).catch(function(e){lastErr=String(e&&e.message||e);fail.push(t)}));
+}
+function refresh(){
+  var b=$("rf"),st=$("rfs"),ok=0,fail=[],jobs=[];
+  b.disabled=true;st.textContent="更新中…";lastErr="";
+  jobs.push(fetch(API_FOREX_URL).then(function(r){return r.json()}).then(function(d){
+    if(d&&d.rates&&d.rates.TWD>0){S.fx=d.rates.TWD;$("fx").value=S.fx.toFixed(3);ok++}else fail.push("匯率")
+  }).catch(function(e){lastErr=String(e&&e.message||e);fail.push("匯率")}));
+  S.stocks.forEach(function(s){
+    var t=tick(s);if(!t)return;
+    if(s.cur!=="USD"){tw(s,t,jobs,fail,function(){ok++});return}
+    if(!cfg.fh){fail.push(t);lastErr="尚未設定 Finnhub key";return}
+    jobs.push(fetch(API_BASE_URL+encodeURIComponent(t)+"&token="+encodeURIComponent(cfg.fh)).then(function(r){return r.json()}).then(function(d){
+      if(d&&d.c>0){s.price=d.c;ok++}else fail.push(t)
+    }).catch(function(e){lastErr=String(e&&e.message||e);fail.push(t)}));
+  });
+  Promise.all(jobs).then(function(){
+    rows();b.disabled=false;
+    st.textContent="已更新 "+ok+" 項"+(fail.length?"；失敗："+fail.join("、")+(lastErr?"［原因："+lastErr+"］":""):"")+"（"+tm()+"）；台股為最近一個交易日收盤價";
+  });
+}
+$("rf").onclick=refresh;
+
+/* ---------- 設定 ---------- */
+$("cgh").value=cfg.gh;$("cfh").value=cfg.fh;$("cfm").value=cfg.fm;
+$("csave").onclick=function(){
+  var g=$("cgh").value.trim();
+  if(g!==cfg.gh){cfg.gid="";synced=false}
+  cfg.gh=g;cfg.fh=$("cfh").value.trim();cfg.fm=$("cfm").value.trim();
+  saveCfg();$("cmsg").textContent="已儲存在這個裝置";
+  pull();
+};
+
+/* ---------- 啟動 ---------- */
+$("ret").value=S.ret;$("fx").value=S.fx;
+quiet=true;rows();quiet=false;
+pull();
+setInterval(function(){if(!document.hidden)pull()},60000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
+})();
+</script>
+</body>
+</html>
