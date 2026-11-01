@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>股票與負債總覽</title>
 <style>
-:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1f23;--mu:#6b7078;--bd:#e3e1da;--ac:#1f6f5c;--up:#c0392b;--dn:#1e8449;--debt:#b9532b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14161a;--card:#1d2026;--tx:#eceef1;--mu:#9aa0a9;--bd:#2b2f37;--ac:#4fb89e;--up:#ff6b5e;--dn:#4cc27f;--debt:#e58a5f}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#14161a;--card:#1d2026;--tx:#eceef1;--mu:#9aa0a9;--bd:#2b2f37;--ac:#4fb89e;--up:#ff6b5e;--dn:#4cc27f;--debt:#e58a5f}
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1f23;--mu:#6b7078;--bd:#e3e1da;--ac:#1f6f5c;--up:#1e8449;--dn:#c0392b;--debt:#b9532b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14161a;--card:#1d2026;--tx:#eceef1;--mu:#9aa0a9;--bd:#2b2f37;--ac:#4fb89e;--up:#4cc27f;--dn:#ff6b5e;--debt:#e58a5f}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14161a;--card:#1d2026;--tx:#eceef1;--mu:#9aa0a9;--bd:#2b2f37;--ac:#4fb89e;--up:#4cc27f;--dn:#ff6b5e;--debt:#e58a5f}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.5}
@@ -44,6 +44,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 .bh .sp{flex:1}
 .rr{font-size:22px;font-weight:650;color:var(--ac)}
 .big{font-size:28px}
+.mv{font-size:22px;font-weight:650;color:var(--tx)}
 </style>
 </head>
 <body>
@@ -189,8 +190,8 @@ function order(arr,so,vf){var ix=arr.map(function(_,i){return i});if(so)ix.sort(
 function marks(){document.querySelectorAll("th[data-sk]").forEach(function(th){var so=th.getAttribute("data-t")==="d"?SO.d:SO.s;th.textContent=th.getAttribute("data-b")+(so&&so.k===th.getAttribute("data-sk")?(so.d<0?" ▼":" ▲"):"")})}
 var G=[{k:"stock",n:"個股"},{k:"proto",n:"原型"},{k:"lev",n:"槓桿 x2"},{k:"cash",n:"類現金"}];
 var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
-function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
-$("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b id="v_clec"></b>　損益 <b id="p_clec"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
+function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b class="mv" id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
+$("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b class="mv" id="v_clec"></b>　損益 <b id="p_clec"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
 /* ---------- 畫面 ---------- */
 function rows(){
   $("up").value=S.up;$("dn").value=S.dn;
