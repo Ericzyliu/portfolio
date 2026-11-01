@@ -136,7 +136,7 @@ function save(){if(!quiet)S.updated=Date.now();try{localStorage.setItem(KEY,JSON
 /* ---------- GitHub Gist 同步 ---------- */
 function ghf(path,opt){
   opt=opt||{};opt.headers={"Authorization":"Bearer "+cfg.gh,"Accept":"application/vnd.github+json"};
-  return fetch(GH+path,opt).then(function(r){if(!r.ok)throw new Error("GitHub "+r.status+(r.status===401?"（token 無效）":""));return r.json()});
+  return fetch(GH+path,opt).then(function(r){if(r.ok)return r.json();return r.json().catch(function(){return{}}).then(function(b){var m=String(b.message||"");throw new Error("GitHub "+r.status+(r.status===401?"（token 無效）":"")+(m?"："+m:"")+(r.headers.get("x-ratelimit-remaining")==="0"?"（API 次數用完，稍後再試）":""))})});
 }
 function findGist(){
   if(cfg.gid)return Promise.resolve(cfg.gid);
