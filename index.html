@@ -112,7 +112,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<button class="x" id="reset" style="margin-left:8px">重設資料</button></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。</div>
 </main>
 <script>
 (function(){
@@ -272,7 +272,6 @@ document.addEventListener("click",function(e){
 });
 
 $("addD").onclick=function(){S.debts.push({name:"",bal:0,rate:0,pay:0});rows()};
-$("reset").onclick=function(){if(confirm("要清除全部資料並回到範例嗎？（會同步清除雲端資料）")){S=norm(JSON.parse(JSON.stringify(SAMPLE)));$("ret").value=S.ret;$("fx").value=S.fx;rows()}};
 
 /* ---------- 報價 ---------- */
 var API_BASE_URL="https://finnhub.io/api/v1/quote?symbol=";
