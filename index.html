@@ -82,7 +82,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 
   <h2>負債 <button class="p" id="addD">＋ 新增</button></h2>
   <div class="card scroll"><table>
-    <thead><tr><th>項目</th><th>餘額</th><th>年利率 %</th><th>月繳</th><th>年利息</th><th></th></tr></thead>
+    <thead><tr><th data-sk="name" data-b="項目" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">項目</th><th data-sk="bal" data-b="餘額" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">餘額</th><th data-sk="rate" data-b="年利率 %" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">年利率 %</th><th data-sk="pay" data-b="月繳" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">月繳</th><th data-sk="it" data-b="年利息" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">年利息</th><th></th></tr></thead>
     <tbody id="debts"></tbody>
   </table></div>
 
@@ -182,8 +182,13 @@ function pull(){
   });
 }
 
+var SO={s:null,d:null};
+function val(s,k){var r=s.cur==="USD"?S.fx:1,v=s.qty*s.price;return k==="mv"?v:k==="pl"?v-s.qty*s.cost:k==="tw"?v*r:s[k]}
+function dval(d,k){return k==="it"?d.bal*d.rate/100:d[k]}
+function order(arr,so,vf){var ix=arr.map(function(_,i){return i});if(so)ix.sort(function(a,b){var x=vf(arr[a],so.k),y=vf(arr[b],so.k);return (typeof x==="string"?String(x).localeCompare(String(y),"zh-TW"):x-y)*so.d});return ix}
+function marks(){document.querySelectorAll("th[data-sk]").forEach(function(th){var so=th.getAttribute("data-t")==="d"?SO.d:SO.s;th.textContent=th.getAttribute("data-b")+(so&&so.k===th.getAttribute("data-sk")?(so.d<0?" ▼":" ▲"):"")})}
 var G=[{k:"stock",n:"個股"},{k:"proto",n:"原型"},{k:"lev",n:"槓桿 x2"},{k:"cash",n:"類現金"}];
-var TH='<thead><tr><th>股票</th><th>幣別</th><th>股數</th><th>成本價</th><th>現價</th><th>市值</th><th>損益</th><th>折合台幣</th><th></th></tr></thead>';
+var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
 function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
 $("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b id="v_clec"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
 /* ---------- 畫面 ---------- */
@@ -194,8 +199,8 @@ function rows(){
     '<td><select data-t="s" data-i="'+i+'" data-f="cur"><option value="TWD"'+(s.cur==="TWD"?" selected":"")+'>TWD</option><option value="USD"'+(s.cur==="USD"?" selected":"")+'>USD</option></select></td>'+
     ['qty','cost','price'].map(function(f){return '<td><input type="number" step="any" data-t="s" data-i="'+i+'" data-f="'+f+'" value="'+s[f]+'"></td>'}).join('')+
     '<td id="sv'+i+'"></td><td id="sp'+i+'"></td><td id="st'+i+'"></td><td><button class="x" data-del="s" data-i="'+i+'" aria-label="刪除">✕</button></td></tr>';
-  };$("tb_"+g.k).innerHTML=S.stocks.map(function(s,i){return s.g===g.k?f(s,i):""}).join('')});
-  $("debts").innerHTML=S.debts.map(function(d,i){
+  };$("tb_"+g.k).innerHTML=order(S.stocks,SO.s,val).map(function(i){var s=S.stocks[i];return s.g===g.k?f(s,i):""}).join('')});
+  $("debts").innerHTML=order(S.debts,SO.d,dval).map(function(i){var d=S.debts[i];
     return '<tr><td><input data-t="d" data-i="'+i+'" data-f="name" value="'+esc(d.name)+'"></td>'+
     ['bal','rate','pay'].map(function(f){return '<td><input type="number" step="any" data-t="d" data-i="'+i+'" data-f="'+f+'" value="'+d[f]+'"></td>'}).join('')+
     '<td id="di'+i+'"></td><td><button class="x" data-del="d" data-i="'+i+'" aria-label="刪除">✕</button></td></tr>';
@@ -203,7 +208,7 @@ function rows(){
   calc();
 }
 function calc(){
-  var A=0,tg={stock:0,proto:0,lev:0,cash:0},gl=0,gp=0;
+  marks();var A=0,tg={stock:0,proto:0,lev:0,cash:0},gl=0,gp=0;
   S.stocks.forEach(function(s,i){
     var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;if(s.g==="proto")gp+=pl*r;if(s.g==="lev")gl+=pl*r;
     $("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
@@ -244,6 +249,8 @@ document.addEventListener("input",function(e){
 });
 document.addEventListener("click",function(e){
   var t=e.target,del=t.getAttribute&&t.getAttribute("data-del"),ag=t.getAttribute&&t.getAttribute("data-add");
+  var th=t.closest&&t.closest("th[data-sk]");
+  if(th){var d2=th.getAttribute("data-t")==="d",so=d2?SO.d:SO.s,k=th.getAttribute("data-sk"),nw=so&&so.k===k?{k:k,d:-so.d}:{k:k,d:-1};if(d2)SO.d=nw;else SO.s=nw;quiet=true;rows();quiet=false;return}
   if(ag){S.stocks.push({g:ag,sym:"",cur:"TWD",qty:0,cost:0,price:0});rows();return}
   if(del){(del==="s"?S.stocks:S.debts).splice(+t.getAttribute("data-i"),1);rows()}
 });
