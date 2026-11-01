@@ -44,6 +44,10 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 .bh .sp{flex:1}
 .rr{font-size:22px;font-weight:650;color:var(--ac)}
 .big{font-size:28px}
+.pair{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.pair .blk{margin:0;border-color:var(--ac)}
+.pair .card{background:var(--bg)}
+.pair .card>.k:first-child{font-size:15px}
 </style>
 </head>
 <body>
@@ -57,12 +61,12 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     <div class="card"><div class="k">淨值</div><div class="v" id="sNet"></div></div>
     <div class="card"><div class="k">股票市值 / 負債</div><div class="v" id="sRatio"></div></div>
   </div>
-  <div class="grid">
-    <div class="card"><div class="k">個股 佔整個資產</div><div class="v big" id="t_stock"></div><div class="k" style="margin-top:4px">市值 <b id="tv_stock"></b></div><div class="k">損益 <b id="tp_stock"></b></div></div>
-    <div class="card"><div class="k">CLEC 佔整個資產</div><div class="v big" id="t_clec"></div><div class="k" style="margin-top:4px">市值 <b id="tv_clec"></b></div><div class="k">損益 <b id="tp_clec"></b></div></div>
-    <div class="card"><div class="k">原型 佔 CLEC</div><div class="v big" id="t_proto"></div><div class="k" style="margin-top:4px">市值 <b id="tv_proto"></b></div><div class="k">損益 <b id="tp_proto"></b></div></div>
+  <div class="pair">
+    <div class="blk" style="flex:2 1 280px"><div class="k" style="margin-bottom:8px">整個資產 ＝ 個股 ＋ CLEC</div><div class="grid" style="margin:0"><div class="card"><div class="k">個股 佔整個資產</div><div class="v big" id="t_stock"></div><div class="k" style="margin-top:4px">市值 <b id="tv_stock"></b></div><div class="k">損益 <b id="tp_stock"></b></div></div>
+    <div class="card"><div class="k">CLEC 佔整個資產</div><div class="v big" id="t_clec"></div><div class="k" style="margin-top:4px">市值 <b id="tv_clec"></b></div><div class="k">損益 <b id="tp_clec"></b></div></div></div></div>
+    <div class="blk" style="flex:3 1 400px"><div class="k" style="margin-bottom:8px">CLEC ＝ 原型 ＋ 槓桿 x2 ＋ 類現金</div><div class="grid" style="margin:0"><div class="card"><div class="k">原型 佔 CLEC</div><div class="v big" id="t_proto"></div><div class="k" style="margin-top:4px">市值 <b id="tv_proto"></b></div><div class="k">損益 <b id="tp_proto"></b></div></div>
     <div class="card"><div class="k">槓桿 x2 佔 CLEC</div><div class="v big" id="t_lev"></div><div class="k" style="margin-top:4px">市值 <b id="tv_lev"></b></div><div class="k">損益 <b id="tp_lev"></b></div></div>
-    <div class="card"><div class="k">類現金 佔 CLEC</div><div class="v big" id="t_cash"></div><div class="k" style="margin-top:4px">市值 <b id="tv_cash"></b></div><div class="k">損益 <b id="tp_cash"></b></div></div>
+    <div class="card"><div class="k">類現金 佔 CLEC</div><div class="v big" id="t_cash"></div><div class="k" style="margin-top:4px">市值 <b id="tv_cash"></b></div><div class="k">損益 <b id="tp_cash"></b></div></div></div></div>
   </div>
 
   <div class="card">
