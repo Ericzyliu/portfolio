@@ -75,9 +75,9 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
   <h2>股票</h2>
   <div id="segs"></div>
   <div class="blk" style="border-color:#e08a3c"><div class="bh"><b>CLEC 再平衡</b></div>
-    <div class="row"><label>漲：賣槓桿，金額為原型當年獲利的 <input type="number" id="up" step="any" style="width:80px"> %</label><label>跌：賣類現金，整個資產的 <input type="number" id="dn" step="any" style="width:80px"> %</label></div>
+    <div class="row"><label>漲：賣槓桿當年獲利的 <input type="number" id="up" step="any" style="width:80px"> %</label><label>跌：賣類現金，整個資產的 <input type="number" id="dn" step="any" style="width:80px"> %</label></div>
     <div class="note" id="rb"></div>
-    <div class="k" style="margin-top:8px;line-height:1.8">① 原型 ETF 永遠不動：再平衡時，原型（QQQ／00662）從來不做再平衡。<br>② 漲：只賣槓桿 ETF，金額為原型「當年獲利」的設定比例（預設 30%），轉進類現金（00865B）。<br>③ 跌：賣類現金「當下整個資產」的設定比例（預設 2%），逢低加碼買回槓桿 ETF。<br>「當年獲利」以 CLEC 原型持股目前的損益計；若要以年初起算，請把原型的成本價改填年初價。</div>
+    <div class="k" style="margin-top:8px;line-height:1.8">① 原型 ETF 永遠不動：再平衡時，原型（QQQ／00662）從來不做再平衡。<br>② 漲：只賣槓桿 ETF「當年獲利」的設定比例（預設 30%），轉進類現金（00865B）。<br>③ 跌：賣類現金「當下整個資產」的設定比例（預設 2%），逢低加碼買回槓桿 ETF。<br>以 CLEC 原型目前的損益判斷漲或跌；「當年獲利」以槓桿持股的損益計，若要以年初起算，請把成本價改填年初價。</div>
   </div>
 
   <h2>負債 <button class="p" id="addD">＋ 新增</button></h2>
@@ -203,9 +203,9 @@ function rows(){
   calc();
 }
 function calc(){
-  var A=0,tg={stock:0,proto:0,lev:0,cash:0},gl=0;
+  var A=0,tg={stock:0,proto:0,lev:0,cash:0},gl=0,gp=0;
   S.stocks.forEach(function(s,i){
-    var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;if(s.g==="proto")gl+=pl*r;
+    var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;if(s.g==="proto")gp+=pl*r;if(s.g==="lev")gl+=pl*r;
     $("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
     var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
     el.className=pl>=0?"up":"dn";
@@ -215,7 +215,7 @@ function calc(){
   $("r_clec").textContent=pc(Cq,A);$("v_clec").textContent=fmt(Cq);$("t_stock").textContent=pc(tg.stock,A);$("t_clec").textContent=pc(Cq,A);
   ["proto","lev","cash"].forEach(function(k){$("r_"+k).textContent=pc(tg[k],Cq);$("t_"+k).textContent=pc(tg[k],Cq);$("v_"+k).textContent=fmt(tg[k])});
   var upv=gl>0?gl*S.up/100:0,dnr=A*S.dn/100,dnv=Math.min(dnr,tg.cash);
-  $("rb").innerHTML="漲：賣出槓桿 ETF 約 <b>"+fmt(upv)+"</b> 元（原型損益 "+fmt(gl)+" 的 "+S.up+"%），轉進類現金。<br>跌：賣出類現金約 <b>"+fmt(dnv)+"</b> 元（整個資產 "+fmt(A)+" 的 "+S.dn+"%"+(dnr>tg.cash?"，已受類現金市值限制":"")+"），逢低加碼買回槓桿 ETF。";
+  $("rb").innerHTML="原型損益 <b>"+fmt(gp)+"</b> 元（"+(gp>0?"漲":gp<0?"跌":"持平")+"）。<br>"+(gp>0?"漲：賣出槓桿 ETF 約 <b>"+fmt(upv)+"</b> 元（槓桿損益 "+fmt(gl)+" 的 "+S.up+"%），轉進類現金。":gp<0?"跌：賣出類現金約 <b>"+fmt(dnv)+"</b> 元（整個資產 "+fmt(A)+" 的 "+S.dn+"%"+(dnr>tg.cash?"，已受類現金市值限制":"")+"），逢低加碼買回槓桿 ETF。":"目前不需要動作。");
   var D=0,I=0,P=0;
   S.debts.forEach(function(d,i){var it=d.bal*d.rate/100;D+=d.bal;I+=it;P+=+d.pay||0;$("di"+i).textContent=fmt(it)});
   var net=A-D,m=Math.max(A,D,1),g=A*S.ret/100;
