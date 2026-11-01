@@ -196,12 +196,12 @@ function pull(){
 }
 
 var SO={s:null,d:null};
-function val(s,k){var r=s.cur==="USD"?S.fx:1,v=s.qty*s.price;return k==="mv"?v:k==="pl"?v-s.qty*s.cost:k==="tw"?v*r:s[k]}
+function val(s,k){var r=s.cur==="USD"?S.fx:1,v=s.qty*s.price;return k==="mv"?v:k==="pl"?(v-s.qty*s.cost)*r:k==="tw"?v*r:s[k]}
 function dval(d,k){return k==="it"?d.bal*d.rate/100:d[k]}
 function order(arr,so,vf){var ix=arr.map(function(_,i){return i});if(so)ix.sort(function(a,b){var x=vf(arr[a],so.k),y=vf(arr[b],so.k);return (typeof x==="string"?String(x).localeCompare(String(y),"zh-TW"):x-y)*so.d});return ix}
 function marks(){document.querySelectorAll("th[data-sk]").forEach(function(th){var so=th.getAttribute("data-t")==="d"?SO.d:SO.s;th.textContent=th.getAttribute("data-b")+(so&&so.k===th.getAttribute("data-sk")?(so.d<0?" ▼":" ▲"):"")})}
 var G=[{k:"stock",n:"個股"},{k:"proto",n:"原型"},{k:"lev",n:"槓桿 x2"},{k:"cash",n:"類現金"}];
-var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
+var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益（台幣）","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
 function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
 $("segs").innerHTML=seg(G[0],"佔整個資產")+'<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>CLEC 投資組合</b><span class="k">市值 <b id="v_clec"></b>　損益 <b id="p_clec"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_clec"></b></span></div>'+seg(G[1],"佔 CLEC")+seg(G[2],"佔 CLEC")+seg(G[3],"佔 CLEC")+'</div>';
 /* ---------- 畫面 ---------- */
@@ -225,7 +225,7 @@ function calc(){
   S.stocks.forEach(function(s,i){
     var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;if(s.g==="proto")gp+=pl*r;if(s.g==="lev")gl+=pl*r;
     $("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
-    var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
+    var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl*r)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
     el.className=pl>=0?"up":"dn";
   });
   var Cq=tg.proto+tg.lev+tg.cash,pc=function(x,y){return y?(x/y*100).toFixed(1)+"%":"—"};
