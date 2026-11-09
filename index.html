@@ -381,13 +381,13 @@ function bkRun(dlOnly){
     add(pf+"項目",x.name);add(pf+"餘額",x.bal);add(pf+"年利率 %",x.rate);add(pf+"月繳",x.pay);add(pf+"年利息",nm_("di"+i)[0]);
   });
   var csv="\ufeff"+H.map(q).join(",")+"\r\n"+R.map(q).join(",")+"\r\n";
-  function parse(t){var rows=[],r=[],f="",inq=false,i=0,c;t=t.replace(/^﻿/,"");for(;i<t.length;i++){c=t[i];if(inq){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=c}else if(c==='"')inq=true;else if(c===","){r.push(f);f=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;r.push(f);f="";rows.push(r);r=[]}else f+=c}if(f!==""||r.length){r.push(f);rows.push(r)}return rows.filter(function(x){return x.length>1||x[0]!==""})}
+  function parse(t){var rows=[],r=[],f="",inq=false,i=0,c;t=t.replace(/^\ufeff/,"");for(;i<t.length;i++){c=t[i];if(inq){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=c}else if(c==='"')inq=true;else if(c===","){r.push(f);f=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;r.push(f);f="";rows.push(r);r=[]}else f+=c}if(f!==""||r.length){r.push(f);rows.push(r)}return rows.filter(function(x){return x.length>1||x[0]!==""})}
   function qq(v){var t=String(v==null?"":v);return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t}
   function merge(old){var P=old?parse(old):[],oh=P.length?P[0]:[],cols=oh.slice(),m,L=[];H.forEach(function(h){if(cols.indexOf(h)<0)cols.push(h)});
     L.push(cols.map(qq).join(","));
     P.slice(1).forEach(function(r){m={};oh.forEach(function(h,i){m[h]=r[i]});L.push(cols.map(function(c){return qq(m[c])}).join(","))});
     m={};H.forEach(function(h,i){m[h]=R[i]});L.push(cols.map(function(c){return q(m[c])}).join(","));
-    return "﻿"+L.join("\r\n")+"\r\n"}
+    return "\ufeff"+L.join("\r\n")+"\r\n"}
   function dl(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}
   var bm=$("bkm");
   if(dlOnly){
@@ -397,7 +397,7 @@ function bkRun(dlOnly){
       if(r.status===404)throw new Error("repo 裡還沒有備份檔，請先按「備份」");
       if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))});
       return r.text();
-    }).then(function(t){csv=t;dl();bm.textContent="已下載最新備份檔（"+tm()+"）"}).catch(function(e){bm.textContent="下載失敗："+e.message});
+    }).then(function(t){csv=t.charCodeAt(0)===0xFEFF?t:"\ufeff"+t;dl();bm.textContent="已下載最新備份檔（"+tm()+"）"}).catch(function(e){bm.textContent="下載失敗："+e.message});
     return;
   }
   if(!(cfg.bt&&cfg.br)){dl();bm.textContent="已下載（未設定自動上傳）";return}
