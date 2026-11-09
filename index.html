@@ -113,7 +113,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-d</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-f</div></div>
 </main>
 <script>
 (function(){
@@ -477,7 +477,7 @@ function drawChart(host,cfg,rows){
   hv.addEventListener("pointermove",show);hv.addEventListener("pointerdown",show);
   hv.addEventListener("pointerleave",function(){tip.style.display="none";gd.style.display="none"});
 }
-function chartRows(){return CHR.rows.filter(function(o){return !CHR.days||o._t>=Date.now()-CHR.days*864e5})}
+function chartRows(){var m={},ks=[];CHR.rows.forEach(function(o){if(CHR.days&&o._t<Date.now()-CHR.days*864e5)return;var d=fdate(o._t,false);if(!(d in m))ks.push(d);m[d]=o});return ks.map(function(d){return m[d]})}
 function drawAll(){
   var rows=chartRows(),sc=SCOPES[CHR.scope],cl=CLS[CHR.cl];
   drawChart($("ch0"),{axes:[{f:"wan"},{f:"wan"}],series:[{name:sc[0]+" 市值",col:sc[1],type:"bar",axis:0},{name:sc[0]+" 損益",col:sc[2],type:"line",axis:1}]},rows);
@@ -503,7 +503,7 @@ function loadCharts(){
     if(r.status===404)throw new Error("repo 裡還沒有備份檔，請先按「備份」");
     if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))});
     return r.text();
-  }).then(function(t){CHR.rows=bakRows(t);CHR.loaded=true;m.textContent="已載入 "+CHR.rows.length+" 筆備份（"+tm()+"）。每筆備份是一個位置，沒備份的日子不留空；滑鼠移到圖上或手指點圖，可看該次的日期與數字。";buildCharts()}).catch(function(e){m.textContent="載入失敗："+e.message}).then(function(){$("chl").disabled=false});
+  }).then(function(t){CHR.rows=bakRows(t);CHR.loaded=true;m.textContent="已載入 "+CHR.rows.length+" 筆備份（"+tm()+"）。同一天有多筆時，圖上只取當天最新一筆；沒備份的日子不留空。滑鼠移到圖上或手指點圖，可看該日的數字。";buildCharts()}).catch(function(e){m.textContent="載入失敗："+e.message}).then(function(){$("chl").disabled=false});
 }
 $("chl").onclick=loadCharts;
 $("chd").onchange=function(){CHR.days=+$("chd").value;if(CHR.loaded)drawAll()};
