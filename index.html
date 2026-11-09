@@ -47,6 +47,9 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 .pair{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .pair .blk{margin:0;border-color:var(--ac)}
 .pair .card{background:var(--bg)}
+.go{cursor:pointer}.go:active{opacity:.7}
+@keyframes flash{0%,60%{box-shadow:0 0 0 3px var(--ac)}100%{box-shadow:0 0 0 3px transparent}}.flash{animation:flash 1.6s ease-out}
+#totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:44px;height:44px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--ac);font-size:20px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;display:none;z-index:50;padding:0}
 .pair .card>.k:first-child{font-size:15px}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin:4px 0}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
@@ -113,8 +116,9 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-j</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-k</div></div>
 </main>
+<button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
 (function(){
 var KEY="portfolio-v1",CFG="portfolio-cfg-v1";
@@ -204,10 +208,14 @@ function marks(){document.querySelectorAll("th[data-sk]").forEach(function(th){v
 var G=[{k:"stock",n:"個股"},{k:"proto",n:"原型"},{k:"lev",n:"槓桿 x2"},{k:"cash",n:"類現金"},{k:"tproto",n:"原型"},{k:"tlev",n:"槓桿 x2"},{k:"tcash",n:"類現金"}];
 var CL=[{pf:"w",id:"clecw",n:"CLEC-TW",k:{p:"tproto",l:"tlev",c:"tcash"}},{pf:"",id:"clec",n:"CLEC-US",k:{p:"proto",l:"lev",c:"cash"}}];
 var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益（台幣）","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
-function seg(g,lbl){return '<div class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
-function clecBlk(c){return '<div class="blk" style="border-color:var(--ac)"><div class="bh"><b>'+c.n+' 投資組合</b><span class="k">市值 <b id="v_'+c.id+'"></b>　損益 <b id="p_'+c.id+'"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_'+c.id+'"></b></span></div>'+[c.k.p,c.k.l,c.k.c].map(function(k){return seg(G.filter(function(g){return g.k===k})[0],"佔 "+c.n)}).join("")+'</div>'}
+function seg(g,lbl){return '<div id="sg_'+g.k+'" class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
+function clecBlk(c){return '<div id="sg_'+c.id+'" class="blk" style="border-color:var(--ac)"><div class="bh"><b>'+c.n+' 投資組合</b><span class="k">市值 <b id="v_'+c.id+'"></b>　損益 <b id="p_'+c.id+'"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_'+c.id+'"></b></span></div>'+[c.k.p,c.k.l,c.k.c].map(function(k){return seg(G.filter(function(g){return g.k===k})[0],"佔 "+c.n)}).join("")+'</div>'}
+document.addEventListener("click",function(e){var c=e.target.closest&&e.target.closest("[data-go]");if(!c)return;var t=$("sg_"+c.getAttribute("data-go"));if(!t)return;t.scrollIntoView({behavior:"smooth",block:"start"});t.classList.remove("flash");void t.offsetWidth;t.classList.add("flash")});
+var tt=$("totop");tt.onclick=function(){window.scrollTo({top:0,behavior:"smooth"})};
+function tts(){tt.style.display=(window.pageYOffset||document.documentElement.scrollTop)>400?"block":"none"}
+window.addEventListener("scroll",tts,{passive:true});tts();
 $("segs").innerHTML=seg(G[0],"佔整個資產")+CL.map(clecBlk).join("");
-function card(k,t){return '<div class="card"><div class="k">'+t+'</div><div class="v big" id="t_'+k+'"></div><div class="k" style="margin-top:4px">市值 <b id="tv_'+k+'"></b></div><div class="k">損益 <b id="tp_'+k+'"></b></div></div>'}
+function card(k,t){return '<div class="card go" data-go="'+k+'" title="點一下跳到明細"><div class="k">'+t+'</div><div class="v big" id="t_'+k+'"></div><div class="k" style="margin-top:4px">市值 <b id="tv_'+k+'"></b></div><div class="k">損益 <b id="tp_'+k+'"></b></div></div>'}
 $("pair").innerHTML='<div class="blk"><div class="k" style="margin-bottom:8px">整個資產 ＝ 個股 ＋ CLEC-TW ＋ CLEC-US</div><div class="grid" style="margin:0">'+card("stock","個股 佔整個資產")+card("clecw","CLEC-TW 佔整個資產")+card("clec","CLEC-US 佔整個資產")+'</div></div>'+CL.map(function(c){return '<div class="blk"><div class="k" style="margin-bottom:8px">'+c.n+' ＝ 原型 ＋ 槓桿 x2 ＋ 類現金</div><div class="grid" style="margin:0">'+card(c.k.p,"原型 佔 "+c.n)+card(c.k.l,"槓桿 x2 佔 "+c.n)+card(c.k.c,"類現金 佔 "+c.n)+'</div></div>'}).join("");
 function rebBlk(c){var p=c.pf,us=!p;return '<div class="blk" style="border-color:#e08a3c"><div class="bh"><b>'+c.n+' 再平衡</b><span class="sp"></span><select id="'+p+'st"><option value="1">策略一：漲跌規則</option><option value="2">策略二：目標比例＋新增投入</option></select></div>'+
  '<div id="'+p+'s1"><div class="row"><label>漲：賣槓桿當年獲利的 <input type="number" id="'+p+'up" step="any" style="width:80px"> %</label><label>跌：賣類現金，整個資產的 <input type="number" id="'+p+'dn" step="any" style="width:80px"> %</label></div><div class="note" id="'+p+'rb"></div>'+
