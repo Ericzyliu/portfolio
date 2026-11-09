@@ -49,6 +49,13 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 .pair .card{background:var(--bg)}
 .go{cursor:pointer}.go:active{opacity:.7}
 @keyframes flash{0%,60%{box-shadow:0 0 0 3px var(--ac)}100%{box-shadow:0 0 0 3px transparent}}.flash{animation:flash 1.6s ease-out}
+#toc{display:none}
+@media (min-width:1260px){#toc{display:block;position:fixed;top:24px;left:calc(50% - 460px - 190px);width:170px;font-size:14px}
+#toc b{display:block;font-size:12px;color:var(--mu);margin:0 0 8px 10px;font-weight:600}
+#toc a{display:block;padding:6px 10px;border-left:3px solid var(--bd);color:var(--mu);text-decoration:none;cursor:pointer}
+#toc a:hover{color:var(--tx)}#toc a.on{border-left-color:var(--ac);color:var(--ac);font-weight:600}
+#toc a.ts{padding-left:22px;font-size:13px}}
+h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
 #totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:44px;height:44px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--ac);font-size:20px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;display:none;z-index:50;padding:0}
 .pair .card>.k:first-child{font-size:15px}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin:4px 0}
@@ -58,6 +65,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 </style>
 </head>
 <body>
+<nav id="toc" aria-label="大綱"></nav>
 <main>
   <div class="bh" style="justify-content:space-between;margin-bottom:12px"><h1 style="margin:0">股票與負債總覽</h1><span style="display:flex;gap:8px;align-items:center"><span class="k" id="bkm"></span><button class="p" id="bk">備份</button><button id="dk">下載</button></span></div>
   <div class="grid">
@@ -79,13 +87,13 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
   <div id="segs"></div>
   <div id="rebs"></div>
 
-  <h2>負債 <button class="p" id="addD">＋ 新增</button></h2>
+  <h2 id="sec_debt">負債 <button class="p" id="addD">＋ 新增</button></h2>
   <div class="card scroll"><table>
     <thead><tr><th data-sk="name" data-b="項目" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">項目</th><th data-sk="bal" data-b="餘額" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">餘額</th><th data-sk="rate" data-b="年利率 %" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">年利率 %</th><th data-sk="pay" data-b="月繳" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">月繳</th><th data-sk="it" data-b="年利息" data-t="d" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">年利息</th><th></th></tr></thead>
     <tbody id="debts"></tbody>
   </table></div>
 
-  <h2>報酬 vs 利息</h2>
+  <h2 id="sec_ret">報酬 vs 利息</h2>
   <div class="card">
     <div class="row">
       <label for="ret">假設股票年報酬率</label>
@@ -101,10 +109,10 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     <div class="note" id="msg"></div>
   </div>
 
-  <h2>圖表 <span class="row" style="gap:8px"><select id="chd"><option value="0">全部期間</option><option value="30">近 30 天</option><option value="90">近 90 天</option><option value="365">近 1 年</option></select><button class="p" id="chl">載入圖表</button></span></h2>
+  <h2 id="sec_chart">圖表 <span class="row" style="gap:8px"><select id="chd"><option value="0">全部期間</option><option value="30">近 30 天</option><option value="90">近 90 天</option><option value="365">近 1 年</option></select><button class="p" id="chl">載入圖表</button></span></h2>
   <div class="card"><div class="k" id="chm">按「載入圖表」會從你的備份 repo 讀取 portfolio-backup.csv 來畫圖，需先在最下方設定備份 token 與 repo。</div><div id="chs"></div></div>
 
-  <h2>設定</h2>
+  <h2 id="sec_cfg">設定</h2>
   <details class="card"><summary>⚙ 連線設定（每個裝置各填一次，只存在這個裝置的瀏覽器）</summary>
     <div style="display:grid;gap:10px;margin-top:12px">
       <label class="k">GitHub token（classic，只勾 gist 權限）<input type="password" id="cgh" autocomplete="off" style="text-align:left;margin-top:4px"></label>
@@ -116,7 +124,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-k</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-l</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -211,6 +219,11 @@ var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成�
 function seg(g,lbl){return '<div id="sg_'+g.k+'" class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
 function clecBlk(c){return '<div id="sg_'+c.id+'" class="blk" style="border-color:var(--ac)"><div class="bh"><b>'+c.n+' 投資組合</b><span class="k">市值 <b id="v_'+c.id+'"></b>　損益 <b id="p_'+c.id+'"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_'+c.id+'"></b></span></div>'+[c.k.p,c.k.l,c.k.c].map(function(k){return seg(G.filter(function(g){return g.k===k})[0],"佔 "+c.n)}).join("")+'</div>'}
 document.addEventListener("click",function(e){var c=e.target.closest&&e.target.closest("[data-go]");if(!c)return;var t=$("sg_"+c.getAttribute("data-go"));if(!t)return;t.scrollIntoView({behavior:"smooth",block:"start"});t.classList.remove("flash");void t.offsetWidth;t.classList.add("flash")});
+var TOC=[["總覽","top"],["個股","sg_stock"],["CLEC-TW","sg_clecw"],["CLEC-US","sg_clec"],["再平衡","rebs"],["負債","sec_debt"],["報酬 vs 利息","sec_ret"],["圖表","sec_chart"],["設定","sec_cfg"]];
+var tocEl=$("toc");tocEl.innerHTML="<b>大綱</b>"+TOC.map(function(x,i){return'<a data-t="'+x[1]+'"'+(i>=1&&i<=3?' class="ts"':'')+'>'+x[0]+'</a>'}).join("");
+tocEl.addEventListener("click",function(e){var a=e.target.closest("a");if(!a)return;var id=a.getAttribute("data-t");if(id==="top"){window.scrollTo({top:0,behavior:"smooth"});return}var t=$(id);if(t)t.scrollIntoView({behavior:"smooth",block:"start"})});
+function tocOn(){if(getComputedStyle(tocEl).display==="none")return;var cur=0;TOC.forEach(function(x,i){var el=x[1]==="top"?null:$(x[1]);if(el&&el.getBoundingClientRect().top<=140)cur=i});if(window.innerHeight+window.pageYOffset>=document.documentElement.scrollHeight-4)cur=TOC.length-1;[].forEach.call(tocEl.querySelectorAll("a"),function(a,i){a.classList.toggle("on",i===cur)})}
+window.addEventListener("scroll",tocOn,{passive:true});window.addEventListener("resize",tocOn);setTimeout(tocOn,0);
 var tt=$("totop");tt.onclick=function(){window.scrollTo({top:0,behavior:"smooth"})};
 function tts(){tt.style.display=(window.pageYOffset||document.documentElement.scrollTop)>400?"block":"none"}
 window.addEventListener("scroll",tts,{passive:true});tts();
