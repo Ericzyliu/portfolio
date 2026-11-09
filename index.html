@@ -106,7 +106,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。</div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-b</div></div>
 </main>
 <script>
 (function(){
@@ -388,7 +388,7 @@ function bkRun(dlOnly){
     P.slice(1).forEach(function(r){m={};oh.forEach(function(h,i){m[h]=r[i]});L.push(cols.map(function(c){return qq(m[c])}).join(","))});
     m={};H.forEach(function(h,i){m[h]=R[i]});L.push(cols.map(function(c){return q(m[c])}).join(","));
     return "\ufeff"+L.join("\r\n")+"\r\n"}
-  function dl(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}
+  function dl(){var u=unescape(encodeURIComponent(csv.replace(/^\ufeff/,""))),by=new Uint8Array(u.length+3),i;by[0]=0xEF;by[1]=0xBB;by[2]=0xBF;for(i=0;i<u.length;i++)by[i+3]=u.charCodeAt(i);var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([by],{type:"text/csv;charset=utf-8"}));a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}
   var bm=$("bkm");
   if(dlOnly){
     if(!(cfg.bt&&cfg.br)){dl();bm.textContent="已下載目前資料（未設定備份 repo，僅此一列）";return}
