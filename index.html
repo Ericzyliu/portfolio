@@ -52,7 +52,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
 </head>
 <body>
 <main>
-  <div class="bh" style="justify-content:space-between;margin-bottom:12px"><h1 style="margin:0">股票與負債總覽</h1><span style="display:flex;gap:8px;align-items:center"><span class="k" id="bkm"></span><button class="p" id="bk">備份</button></span></div>
+  <div class="bh" style="justify-content:space-between;margin-bottom:12px"><h1 style="margin:0">股票與負債總覽</h1><span style="display:flex;gap:8px;align-items:center"><span class="k" id="bkm"></span><button class="p" id="bk">備份</button><button id="dk">下載</button></span></div>
   <div class="grid">
     <div class="card"><div class="k">股票市值（折合台幣）</div><div class="v" id="sAssets"></div><div class="k" style="margin-top:4px">損益 <b id="sPL"></b></div></div>
     <div class="card"><div class="k">總負債</div><div class="v" id="sDebt"></div></div>
@@ -342,7 +342,7 @@ function refresh(){
 $("rf").onclick=refresh;
 
 /* ---------- 設定 ---------- */
-$("bk").onclick=function(){
+function bkRun(dlOnly){
   var d=new Date(),p=function(n){return String(n).padStart(2,"0")},
   ts=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds()),
   fn="portfolio-backup.csv";
@@ -390,6 +390,16 @@ $("bk").onclick=function(){
     return "﻿"+L.join("\r\n")+"\r\n"}
   function dl(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}
   var bm=$("bkm");
+  if(dlOnly){
+    if(!(cfg.bt&&cfg.br)){dl();bm.textContent="已下載目前資料（未設定備份 repo，僅此一列）";return}
+    bm.textContent="下載中…";
+    fetch(GH+"/repos/"+cfg.br+"/contents/"+fn,{headers:{"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github.raw+json"},cache:"no-store"}).then(function(r){
+      if(r.status===404)throw new Error("repo 裡還沒有備份檔，請先按「備份」");
+      if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))});
+      return r.text();
+    }).then(function(t){csv=t;dl();bm.textContent="已下載最新備份檔（"+tm()+"）"}).catch(function(e){bm.textContent="下載失敗："+e.message});
+    return;
+  }
   if(!(cfg.bt&&cfg.br)){dl();bm.textContent="已下載（未設定自動上傳）";return}
   bm.textContent="上傳中…";
   var url=GH+"/repos/"+cfg.br+"/contents/"+fn,h={"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github+json"};
@@ -398,7 +408,8 @@ $("bk").onclick=function(){
     var old="";if(j&&j.content)old=decodeURIComponent(escape(atob(j.content.replace(/\s/g,""))));else if(j&&j.size>0)throw new Error("備份檔超過 1MB，無法再追加，請把舊檔改名封存後再備份");var body={message:"備份 "+ts,content:btoa(unescape(encodeURIComponent(merge(old))))};if(j&&j.sha)body.sha=j.sha;
     return fetch(url,{method:"PUT",headers:h,body:JSON.stringify(body)})
   }).then(function(r){if(!r.ok)return bad(r);bm.textContent="☁️ 已備份到 GitHub（"+tm()+"）"}).catch(function(e){dl();bm.textContent="上傳失敗："+e.message+"，已改為下載檔案"});
-};
+}
+$("bk").onclick=function(){bkRun(false)};$("dk").onclick=function(){bkRun(true)};
 $("cgh").value=cfg.gh;$("cfh").value=cfg.fh;$("cfm").value=cfg.fm;$("cbt").value=cfg.bt||"";$("cbr").value=cfg.br||"";
 $("csave").onclick=function(){
   var g=$("cgh").value.trim();
