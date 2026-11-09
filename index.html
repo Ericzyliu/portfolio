@@ -113,7 +113,7 @@ input[type=range]{width:200px;min-width:0;padding:0;accent-color:var(--ac)}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-f</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-g</div></div>
 </main>
 <script>
 (function(){
@@ -444,6 +444,7 @@ function drawChart(host,cfg,rows){
   if(cfg.stack){
     var tot=rows.map(function(o){var t=0;cfg.series.forEach(function(sr){var v=sr.val(o);if(v!=null&&v>0)t+=v});return t});
     ser=cfg.series.map(function(sr,k){return{name:sr.name,type:"stack",axis:0,color:PAL[k%PAL.length],raw:rows.map(sr.val),v:rows.map(function(o,j){var r=sr.val(o);return tot[j]>0?Math.max(0,r||0)/tot[j]*100:null})}});
+    (cfg.lines||[]).forEach(function(s,k){ser.push({name:s.name,type:"line",axis:1,color:PAL[(cfg.series.length+k)%PAL.length],v:rows.map(function(o){return nv(o,s.col)})})});
   }else{
     ser=cfg.series.map(function(s,k){var f=typeof s.col==="function"?s.col:function(o){return nv(o,s.col)};return{name:s.name,type:s.type||"line",axis:s.axis||0,color:PAL[k%PAL.length],v:rows.map(f)}});
   }
@@ -451,7 +452,7 @@ function drawChart(host,cfg,rows){
   var W=Math.max(300,host.clientWidth||600),H=260,two=ser.some(function(s){return s.axis===1}),ml=58,mr=two?58:14,mt=10,mb=28,pw=W-ml-mr,ph=H-mt-mb;
   var X=function(j){return ml+(j+0.5)/n*pw};
   var ax=[0,1].map(function(a){var ss=ser.filter(function(s){return s.axis===a});if(!ss.length)return null;
-    if(cfg.stack)return{t:[0,20,40,60,80,100],lo:0,hi:100,f:"pct0",c:null};
+    if(cfg.stack&&a===0)return{t:[0,20,40,60,80,100],lo:0,hi:100,f:"pct0",c:null};
     var lo=Infinity,hi=-Infinity,bar=false;ss.forEach(function(s){if(s.type==="bar")bar=true;s.v.forEach(function(v){if(v!=null){if(v<lo)lo=v;if(v>hi)hi=v}})});if(!isFinite(lo)){lo=0;hi=1}if(bar){lo=Math.min(lo,0);hi=Math.max(hi,0)}var nt=niceTicks(lo,hi,5);return{t:nt.t,lo:nt.lo,hi:nt.hi,f:cfg.axes[a].f,c:ss[0].color}});
   var Y=function(a,v){var A=ax[a];return mt+ph-(v-A.lo)/(A.hi-A.lo)*ph};
   var fl=function(c){return c?'fill="'+c+'"':'style="fill:var(--mu)"'};
@@ -464,7 +465,7 @@ function drawChart(host,cfg,rows){
   rows.forEach(function(o,j){if(j%stp)return;var x=X(j),d=new Date(o._t),lb=(yr?String(d.getFullYear()).slice(2)+"/":"")+p2(d.getMonth()+1)+"/"+p2(d.getDate())+(dup?" "+p2(d.getHours())+":"+p2(d.getMinutes()):"");g+='<line x1="'+x+'" x2="'+x+'" y1="'+(mt+ph)+'" y2="'+(mt+ph+4)+'" style="stroke:var(--mu)"/><text x="'+x+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" style="fill:var(--mu)">'+lb+'</text>'});
   g+='<line x1="'+ml+'" x2="'+(W-mr)+'" y1="'+(mt+ph)+'" y2="'+(mt+ph)+'" style="stroke:var(--mu)"/>';
   var sbw=Math.max(6,Math.min(56,pw/n*0.7)),bw=Math.max(4,Math.min(40,pw/n*0.6));
-  if(cfg.stack){rows.forEach(function(o,j){var base=0;ser.forEach(function(s){var v=s.v[j];if(v==null||v<=0)return;var y1=Y(0,base+v),y0=Y(0,base),h=y0-y1;g+='<rect x="'+(X(j)-sbw/2)+'" y="'+y1+'" width="'+sbw+'" height="'+h+'" fill="'+s.color+'" fill-opacity=".85"/>';if(sbw>=34&&h>=16)g+='<text x="'+X(j)+'" y="'+(y1+h/2+4)+'" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">'+Math.round(v)+'%</text>';base+=v})})}
+  if(cfg.stack){rows.forEach(function(o,j){var base=0;ser.forEach(function(s){if(s.type!=="stack")return;var v=s.v[j];if(v==null||v<=0)return;var y1=Y(0,base+v),y0=Y(0,base),h=y0-y1;g+='<rect x="'+(X(j)-sbw/2)+'" y="'+y1+'" width="'+sbw+'" height="'+h+'" fill="'+s.color+'" fill-opacity=".85"/>';if(sbw>=34&&h>=16)g+='<text x="'+X(j)+'" y="'+(y1+h/2+4)+'" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">'+Math.round(v)+'%</text>';base+=v})})}
   ser.filter(function(s){return s.type==="bar"}).forEach(function(s){s.v.forEach(function(v,j){if(v==null)return;var x=X(j),y0=Y(s.axis,0),y=Y(s.axis,v);g+='<rect x="'+(x-bw/2)+'" y="'+Math.min(y,y0)+'" width="'+bw+'" height="'+Math.max(1,Math.abs(y0-y))+'" rx="2" fill="'+s.color+'" fill-opacity=".55"/>'})});
   ser.filter(function(s){return s.type==="line"}).forEach(function(s){var d="";s.v.forEach(function(v,j){if(v==null)return;d+=(d?"L":"M")+X(j).toFixed(1)+" "+Y(s.axis,v).toFixed(1)});g+='<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="2"/>';s.v.forEach(function(v,j){if(v!=null)g+='<circle cx="'+X(j).toFixed(1)+'" cy="'+Y(s.axis,v).toFixed(1)+'" r="3" fill="'+s.color+'"/>'})});
   var lg='<div class="legend">'+ser.map(function(s){return'<span><i style="background:'+s.color+'"></i>'+s.name+(two?(s.axis===1?"（右軸）":"（左軸）"):"")+'</span>'}).join("")+'</div>';
@@ -472,7 +473,7 @@ function drawChart(host,cfg,rows){
   var svg=host.querySelector("svg"),tip=host.querySelector(".tip"),gd=host.querySelector(".gd"),hv=host.querySelector(".hv");
   function show(e){var r=svg.getBoundingClientRect(),sc=W/r.width,px=(e.clientX-r.left)*sc,best=Math.min(n-1,Math.max(0,Math.floor((px-ml)/pw*n)));
     var x=X(best);gd.setAttribute("x1",x);gd.setAttribute("x2",x);gd.style.display="";
-    tip.innerHTML="<b>"+fdate(rows[best]._t,true)+"</b>"+ser.map(function(s){var v=s.v[best],t;if(v==null)t="—";else if(s.type==="stack")t=v.toFixed(1)+"%（"+FULL.wan(s.raw[best]||0)+"）";else t=FULL[cfg.axes[s.axis].f](v);return'<br><span style="color:'+s.color+'">●</span> '+s.name+"："+t}).join("");
+    tip.innerHTML="<b>"+fdate(rows[best]._t,true)+"</b>"+ser.map(function(s){var v=s.v[best],t;if(v==null)t="—";else if(s.type==="stack")t=v.toFixed(1)+"%（"+FULL.wan(s.raw[best]||0)+"）";else t=FULL[(cfg.axes||[{f:"pct"},{f:"pct"}])[s.axis].f](v);return'<br><span style="color:'+s.color+'">●</span> '+s.name+"："+t}).join("");
     tip.style.display="block";var tw=tip.offsetWidth,lx=x/sc+12;if(lx+tw>r.width)lx=x/sc-12-tw;tip.style.left=Math.max(0,lx)+"px";tip.style.top="8px"}
   hv.addEventListener("pointermove",show);hv.addEventListener("pointerdown",show);
   hv.addEventListener("pointerleave",function(){tip.style.display="none";gd.style.display="none"});
@@ -481,8 +482,7 @@ function chartRows(){var m={},ks=[];CHR.rows.forEach(function(o){if(CHR.days&&o.
 function drawAll(){
   var rows=chartRows(),sc=SCOPES[CHR.scope],cl=CLS[CHR.cl];
   drawChart($("ch0"),{axes:[{f:"wan"},{f:"wan"}],series:[{name:sc[0]+" 市值",col:sc[1],type:"bar",axis:0},{name:sc[0]+" 損益",col:sc[2],type:"line",axis:1}]},rows);
-  drawChart($("ch1"),{stack:true,series:[{name:"淨值",val:function(o){return nv(o,"淨值")}},{name:"總負債",val:function(o){return nv(o,"總負債")}}]},rows);
-  drawChart($("ch2"),{axes:[{f:"pct"}],series:[{name:"股票市值 / 負債",col:"股票市值/負債 %"}]},rows);
+  drawChart($("ch1"),{stack:true,axes:[{f:"pct0"},{f:"pct"}],series:[{name:"淨值",val:function(o){return nv(o,"淨值")}},{name:"總負債",val:function(o){return nv(o,"總負債")}}],lines:[{name:"股票市值 / 負債",col:"股票市值/負債 %"}]},rows);
   drawChart($("ch3"),{stack:true,series:[{name:"個股",val:function(o){return nv(o,"個股 市值")}},{name:"CLEC-TW",val:function(o){return nv(o,"CLEC-TW 市值")}},{name:"CLEC-US",val:function(o){return nv(o,"CLEC 市值")}}]},rows);
   drawChart($("ch4"),{axes:[{f:"pct"}],series:[{name:"個股",col:plPct("個股 市值","個股 損益")},{name:"CLEC-TW",col:plPct("CLEC-TW 市值","CLEC-TW 損益")},{name:"CLEC-US",col:plPct("CLEC 市值","CLEC 損益")},{name:"全部股票",col:plPct("股票市值(台幣)","股票總損益(台幣)")}]},rows);
   drawChart($("ch5"),{axes:[{f:"pct"}],series:cl.slice(1).map(function(x){return{name:x[0],col:plPct(x[1],x[2])}})},rows);
@@ -490,7 +490,7 @@ function drawAll(){
 function buildCharts(){
   var sel=function(id,arr,cur){return'<select id="'+id+'">'+arr.map(function(x,i){return'<option value="'+i+'"'+(i===cur?" selected":"")+'>'+x[0]+'</option>'}).join("")+'</select>'};
   var blk=function(t,id,extra,last){return'<div class="chwrap"'+(last?' style="margin-bottom:0"':'')+'><div class="bh"><b>'+t+'</b>'+(extra||"")+'</div><div id="'+id+'"></div></div>'};
-  $("chs").innerHTML='<div style="margin-top:12px"></div>'+blk("市值 ＋ 損益（台幣）","ch0",sel("chsc",SCOPES,CHR.scope))+blk("股票市值的組成：淨值 vs 總負債（%）","ch1")+blk("股票市值 / 負債（%）","ch2")+blk("各部位佔整個資產（%）","ch3")+blk("各部位損益 %（損益 ÷ 成本）","ch4")+blk("CLEC 內各類損益 %（損益 ÷ 成本）","ch5",sel("chcl",CLS,CHR.cl),true);
+  $("chs").innerHTML='<div style="margin-top:12px"></div>'+blk("市值 ＋ 損益（台幣）","ch0",sel("chsc",SCOPES,CHR.scope))+blk("股票市值的組成：淨值 vs 總負債（%）＋ 股票市值 / 負債（%，右軸）","ch1")+blk("各部位佔整個資產（%）","ch3")+blk("各部位損益 %（損益 ÷ 成本）","ch4")+blk("CLEC 內各類損益 %（損益 ÷ 成本）","ch5",sel("chcl",CLS,CHR.cl),true);
   $("chsc").onchange=function(){CHR.scope=+$("chsc").value;drawAll()};
   $("chcl").onchange=function(){CHR.cl=+$("chcl").value;drawAll()};
   drawAll();
