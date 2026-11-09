@@ -124,7 +124,7 @@ h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-l</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-m</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -218,14 +218,18 @@ var CL=[{pf:"w",id:"clecw",n:"CLEC-TW",k:{p:"tproto",l:"tlev",c:"tcash"}},{pf:""
 var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益（台幣）","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
 function seg(g,lbl){return '<div id="sg_'+g.k+'" class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
 function clecBlk(c){return '<div id="sg_'+c.id+'" class="blk" style="border-color:var(--ac)"><div class="bh"><b>'+c.n+' 投資組合</b><span class="k">市值 <b id="v_'+c.id+'"></b>　損益 <b id="p_'+c.id+'"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_'+c.id+'"></b></span></div>'+[c.k.p,c.k.l,c.k.c].map(function(k){return seg(G.filter(function(g){return g.k===k})[0],"佔 "+c.n)}).join("")+'</div>'}
-document.addEventListener("click",function(e){var c=e.target.closest&&e.target.closest("[data-go]");if(!c)return;var t=$("sg_"+c.getAttribute("data-go"));if(!t)return;t.scrollIntoView({behavior:"smooth",block:"start"});t.classList.remove("flash");void t.offsetWidth;t.classList.add("flash")});
+var backY=null;
+function curY(){return window.pageYOffset||document.documentElement.scrollTop||0}
+function rememberPos(){if(backY==null)backY=curY()}
+document.addEventListener("click",function(e){var c=e.target.closest&&e.target.closest("[data-go]");if(!c)return;var t=$("sg_"+c.getAttribute("data-go"));if(!t)return;rememberPos();t.scrollIntoView({behavior:"smooth",block:"start"});t.classList.remove("flash");void t.offsetWidth;t.classList.add("flash")});
 var TOC=[["總覽","top"],["個股","sg_stock"],["CLEC-TW","sg_clecw"],["CLEC-US","sg_clec"],["再平衡","rebs"],["負債","sec_debt"],["報酬 vs 利息","sec_ret"],["圖表","sec_chart"],["設定","sec_cfg"]];
 var tocEl=$("toc");tocEl.innerHTML="<b>大綱</b>"+TOC.map(function(x,i){return'<a data-t="'+x[1]+'"'+(i>=1&&i<=3?' class="ts"':'')+'>'+x[0]+'</a>'}).join("");
-tocEl.addEventListener("click",function(e){var a=e.target.closest("a");if(!a)return;var id=a.getAttribute("data-t");if(id==="top"){window.scrollTo({top:0,behavior:"smooth"});return}var t=$(id);if(t)t.scrollIntoView({behavior:"smooth",block:"start"})});
+tocEl.addEventListener("click",function(e){var a=e.target.closest("a");if(!a)return;var id=a.getAttribute("data-t");if(id==="top"){window.scrollTo({top:0,behavior:"smooth"});return}var t=$(id);if(t){rememberPos();t.scrollIntoView({behavior:"smooth",block:"start"})}});
 function tocOn(){if(getComputedStyle(tocEl).display==="none")return;var cur=0;TOC.forEach(function(x,i){var el=x[1]==="top"?null:$(x[1]);if(el&&el.getBoundingClientRect().top<=140)cur=i});if(window.innerHeight+window.pageYOffset>=document.documentElement.scrollHeight-4)cur=TOC.length-1;[].forEach.call(tocEl.querySelectorAll("a"),function(a,i){a.classList.toggle("on",i===cur)})}
 window.addEventListener("scroll",tocOn,{passive:true});window.addEventListener("resize",tocOn);setTimeout(tocOn,0);
-var tt=$("totop");tt.onclick=function(){window.scrollTo({top:0,behavior:"smooth"})};
-function tts(){tt.style.display=(window.pageYOffset||document.documentElement.scrollTop)>400?"block":"none"}
+var tt=$("totop");tt.onclick=function(){var y=backY==null?0:backY;backY=null;window.scrollTo({top:y,behavior:"smooth"})};
+function tts(){if(backY!=null&&Math.abs(curY()-backY)<60&&!jumping)backY=null;var on=backY!=null||curY()>400;tt.style.display=on?"block":"none";var ret=backY!=null;tt.textContent=ret?"↩":"↑";tt.title=tt.ariaLabel=ret?"回到跳轉前的位置":"回到最上面"}
+var jumping=false,jt;window.addEventListener("scroll",function(){jumping=true;clearTimeout(jt);jt=setTimeout(function(){jumping=false;tts()},250)},{passive:true});
 window.addEventListener("scroll",tts,{passive:true});tts();
 $("segs").innerHTML=seg(G[0],"佔整個資產")+CL.map(clecBlk).join("");
 function card(k,t){return '<div class="card go" data-go="'+k+'" title="點一下跳到明細"><div class="k">'+t+'</div><div class="v big" id="t_'+k+'"></div><div class="k" style="margin-top:4px">市值 <b id="tv_'+k+'"></b></div><div class="k">損益 <b id="tp_'+k+'"></b></div></div>'}
