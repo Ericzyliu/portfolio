@@ -124,7 +124,7 @@ h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-10-o</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-11-a</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -498,7 +498,7 @@ function drawChart(host,cfg,rows){
   var svg=host.querySelector("svg"),tip=host.querySelector(".tip"),gd=host.querySelector(".gd"),hv=host.querySelector(".hv");
   function show(e){var r=svg.getBoundingClientRect(),sc=W/r.width,px=(e.clientX-r.left)*sc,best=Math.min(n-1,Math.max(0,Math.floor((px-ml)/pw*n)));
     var x=X(best);gd.setAttribute("x1",x);gd.setAttribute("x2",x);gd.style.display="";
-    tip.innerHTML="<b>"+fdate(rows[best]._t,true)+"</b>"+ser.map(function(s){var v=s.v[best],t;if(v==null)t="—";else if(s.type==="stack")t=v.toFixed(1)+"%（"+FULL.wan(s.raw[best]||0)+"）";else t=FULL[(cfg.axes||[{f:"pct"},{f:"pct"}])[s.axis].f](v);var arr=s.type==="stack"?s.raw:s.v,cu=arr[best],pv=best>0?arr[best-1]:null;var isP=s.type!=="stack"&&((cfg.axes||[{f:"pct"},{f:"pct"}])[s.axis].f.indexOf("pct")===0);if(cu!=null&&pv!=null&&(isP||pv!==0)){var df=Math.round((isP?cu-pv:(cu-pv)/Math.abs(pv)*100)*10)/10;t+=' <span class="'+(df>0?"up":df<0?"dn":"")+'">'+(df>0?"+":"")+df.toFixed(1)+"%</span>"}return'<br><span style="color:'+s.color+'">●</span> '+s.name+"："+t}).join("");
+    tip.innerHTML="<b>"+fdate(rows[best]._t,true)+"</b>"+ser.map(function(s){var v=s.v[best],t;if(v==null)t="—";else if(s.type==="stack")t=v.toFixed(1)+"%（"+FULL.wan(s.raw[best]||0)+"）";else t=FULL[(cfg.axes||[{f:"pct"},{f:"pct"}])[s.axis].f](v);var arr=s.v,cu=arr[best],pv=best>0?arr[best-1]:null;var isP=s.type==="stack"||((cfg.axes||[{f:"pct"},{f:"pct"}])[s.axis].f.indexOf("pct")===0);if(cu!=null&&pv!=null&&(isP||pv!==0)){var df=Math.round((isP?cu-pv:(cu-pv)/Math.abs(pv)*100)*10)/10;t+=' <span class="'+(df>0?"up":df<0?"dn":"")+'">'+(df>0?"+":"")+df.toFixed(1)+"%</span>"}return'<br><span style="color:'+s.color+'">●</span> '+s.name+"："+t}).join("");
     tip.style.display="block";var tw=tip.offsetWidth,lx=x/sc+12;if(lx+tw>r.width)lx=x/sc-12-tw;tip.style.left=Math.max(0,lx)+"px";tip.style.top="8px"}
   hv.addEventListener("pointermove",show);hv.addEventListener("pointerdown",show);
   hv.addEventListener("pointerleave",function(){tip.style.display="none";gd.style.display="none"});
