@@ -1,5 +1,6 @@
 // 每天自動：同步雲端資料 → 更新報價 → 按「備份」（直接用 index.html 本身的邏輯，數字與手動備份完全一致）
-const { chromium } = require("playwright");
+let pw; try { pw = require("playwright-core"); } catch (e) { pw = require("playwright"); }
+const { chromium } = pw;
 const path = require("path");
 const need = ["GIST_TOKEN", "BACKUP_TOKEN", "BACKUP_REPO"];
 const miss = need.filter((k) => !process.env[k]);
@@ -10,7 +11,7 @@ const cfg = {
 };
 const url = process.env.PAGE_URL || "file://" + path.resolve(__dirname, "..", "index.html");
 (async () => {
-  const b = await chromium.launch();
+  const b = await chromium.launch(process.env.CI ? { channel: "chrome" } : {}); // GitHub 主機內建 Chrome，不必下載瀏覽器
   const pg = await b.newPage();
   pg.on("pageerror", (e) => console.error("pageerror:", e.message));
   await pg.addInitScript((c) => { try { localStorage.setItem("portfolio-cfg-v1", JSON.stringify(c)); } catch (e) {} }, cfg);
