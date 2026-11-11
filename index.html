@@ -126,7 +126,7 @@ h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-e</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-f</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -344,7 +344,7 @@ var API_BASE_URL="https://finnhub.io/api/v1/quote?symbol=";
 var API_FOREX_URL="https://open.er-api.com/v6/latest/USD";
 var FINMIND_URL="https://api.finmindtrade.com/api/v4/data";
 var lastErr="";
-function tick(s){return String(s.sym||"").trim().split(/\s+/)[0].toUpperCase()}
+function tick(s){var y=String(s.sym||"").trim();if(/^(現金|CASH)/i.test(y))return"";return y.split(/\s+/)[0].toUpperCase()}
 function tw(s,t,jobs,fail,hit){
   if(!/^\d{4,6}[A-Z]?$/.test(t)){fail.push(t);return}
   var from=new Date(Date.now()-14*864e5).toISOString().slice(0,10);
