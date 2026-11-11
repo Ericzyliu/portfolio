@@ -126,7 +126,7 @@ h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-f</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-g</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -211,7 +211,8 @@ function pull(){
 }
 
 var SO={s:null,d:null};
-function val(s,k){var r=s.cur==="USD"?S.fx:1,v=s.qty*s.price;return k==="mv"?v:k==="pl"?(v-s.qty*s.cost)*r:k==="tw"?v*r:s[k]}
+function isCash(s){return /^(現金|CASH)/i.test(String(s.sym||"").trim())}
+function val(s,k){var r=s.cur==="USD"?S.fx:1,pr=isCash(s)?1:s.price,v=s.qty*pr;return k==="mv"?v:k==="pl"?(v-s.qty*(isCash(s)?1:s.cost))*r:k==="tw"?v*r:s[k]}
 function dval(d,k){return k==="it"?d.bal*d.rate/100:d[k]}
 function order(arr,so,vf){var ix=arr.map(function(_,i){return i});if(so)ix.sort(function(a,b){var x=vf(arr[a],so.k),y=vf(arr[b],so.k);return (typeof x==="string"?String(x).localeCompare(String(y),"zh-TW"):x-y)*so.d});return ix}
 function marks(){document.querySelectorAll("th[data-sk]").forEach(function(th){var so=th.getAttribute("data-t")==="d"?SO.d:SO.s;th.textContent=th.getAttribute("data-b")+(so&&so.k===th.getAttribute("data-sk")?(so.d<0?" ▼":" ▲"):"")})}
@@ -282,7 +283,7 @@ function reb(c,A,tg,tp,Cq,pc){
 function calc(){
   marks();var tp={},tc={},tg={},A=0;G.forEach(function(g){tp[g.k]=0;tc[g.k]=0;tg[g.k]=0});
   S.stocks.forEach(function(s,i){
-    var v=s.qty*s.price,c=s.qty*s.cost,pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;tc[s.g]=(tc[s.g]||0)+c*r;
+    var v=s.qty*(isCash(s)?1:s.price),c=s.qty*(isCash(s)?1:s.cost),pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;tc[s.g]=(tc[s.g]||0)+c*r;
     $("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
     var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl*r)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
     el.className=pl>=0?"up":"dn";
