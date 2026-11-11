@@ -126,7 +126,7 @@ h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-a</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-b</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -370,6 +370,7 @@ function refresh(){
   });
   Promise.all(jobs).then(function(){
     rows();b.disabled=false;
+    if(CHR.loaded){CHR.live=bkRun("live");drawAll()}
     st.textContent="已更新 "+ok+" 項"+(fail.length?"；失敗："+fail.join("、")+(lastErr?"［原因："+lastErr+"］":""):"")+"（"+tm()+"）；台股為最近一個交易日收盤價";
   });
 }
@@ -414,6 +415,7 @@ function bkRun(dlOnly){
   S.debts.forEach(function(x,i){var pf="負債"+(i+1)+" ";
     add(pf+"項目",x.name);add(pf+"餘額",x.bal);add(pf+"年利率 %",x.rate);add(pf+"月繳",x.pay);add(pf+"年利息",nm_("di"+i)[0]);
   });
+  if(dlOnly==="live"){var lo={};H.forEach(function(h,i){lo[h]=R[i]});lo._t=d.getTime();return lo}
   var csv="\ufeff"+H.map(q).join(",")+"\r\n"+R.map(q).join(",")+"\r\n";
   function parse(t){var rows=[],r=[],f="",inq=false,i=0,c;t=t.replace(/^\ufeff/,"");for(;i<t.length;i++){c=t[i];if(inq){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=c}else if(c==='"')inq=true;else if(c===","){r.push(f);f=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;r.push(f);f="";rows.push(r);r=[]}else f+=c}if(f!==""||r.length){r.push(f);rows.push(r)}return rows.filter(function(x){return x.length>1||x[0]!==""})}
   function qq(v){var t=String(v==null?"":v);return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t}
@@ -456,7 +458,7 @@ $("csave").onclick=function(){
 };
 
 /* ---------- 圖表 ---------- */
-var CHR={rows:[],loaded:false,days:0,scope:0,cl:0},PAL=["#3b82c4","#e08a3c","#2f9e7a","#a06cc8"];
+var CHR={rows:[],live:null,loaded:false,days:0,scope:0,cl:0},PAL=["#3b82c4","#e08a3c","#2f9e7a","#a06cc8"];
 var SCOPES=[["全部股票","股票市值(台幣)","股票總損益(台幣)"],["個股","個股 市值","個股 損益"],["CLEC-TW","CLEC-TW 市值","CLEC-TW 損益"],["CLEC-US","CLEC 市值","CLEC 損益"],["原型（US）","原型 市值","原型 損益"],["槓桿 x2（US）","槓桿 x2 市值","槓桿 x2 損益"],["類現金（US）","類現金 市值","類現金 損益"],["原型（TW）","TW 原型 市值","TW 原型 損益"],["槓桿 x2（TW）","TW 槓桿 x2 市值","TW 槓桿 x2 損益"],["類現金（TW）","TW 類現金 市值","TW 類現金 損益"]];
 var CLS=[["CLEC-US",["原型","原型 市值","原型 損益"],["槓桿 x2","槓桿 x2 市值","槓桿 x2 損益"],["類現金","類現金 市值","類現金 損益"]],["CLEC-TW",["原型","TW 原型 市值","TW 原型 損益"],["槓桿 x2","TW 槓桿 x2 市值","TW 槓桿 x2 損益"],["類現金","TW 類現金 市值","TW 類現金 損益"]]];
 function csvParse(t){var rows=[],r=[],f="",inq=false,i=0,c;t=t.replace(/^﻿/,"");for(;i<t.length;i++){c=t[i];if(inq){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=c}else if(c==='"')inq=true;else if(c===","){r.push(f);f=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;r.push(f);f="";rows.push(r);r=[]}else f+=c}if(f!==""||r.length){r.push(f);rows.push(r)}return rows.filter(function(x){return x.length>1||x[0]!==""})}
@@ -508,7 +510,7 @@ function drawChart(host,cfg,rows){
   hv.addEventListener("pointermove",show);hv.addEventListener("pointerdown",show);
   hv.addEventListener("pointerleave",function(){tip.style.display="none";gd.style.display="none"});
 }
-function chartRows(){var m={},ks=[];CHR.rows.forEach(function(o){if(CHR.days&&o._t<Date.now()-CHR.days*864e5)return;var d=fdate(o._t,false);if(!(d in m))ks.push(d);m[d]=o});return ks.map(function(d){return m[d]})}
+function chartRows(){var m={},ks=[],all=CHR.live?CHR.rows.concat([CHR.live]):CHR.rows;all.forEach(function(o){if(CHR.days&&o._t<Date.now()-CHR.days*864e5)return;var d=fdate(o._t,false);if(!(d in m))ks.push(d);m[d]=o});return ks.map(function(d){return m[d]})}
 function drawAll(){
   var rows=chartRows(),sc=SCOPES[CHR.scope],cl=CLS[CHR.cl];
   drawChart($("ch0"),{axes:[{f:"wan"},{f:"wan"}],series:[{name:sc[0]+" 市值",col:sc[1],type:"line",axis:0},{name:sc[0]+" 損益",col:sc[2],type:"bar",axis:1}]},rows);
@@ -533,7 +535,7 @@ function loadCharts(){
     if(r.status===404)throw new Error("repo 裡還沒有備份檔，請先按「備份」");
     if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))});
     return r.text();
-  }).then(function(t){CHR.rows=bakRows(t);CHR.loaded=true;m.textContent="已載入 "+CHR.rows.length+" 筆備份（"+tm()+"）。同一天有多筆時，圖上只取當天最新一筆；沒備份的日子不留空。滑鼠移到圖上或手指點圖，可看該日的數字。";buildCharts()}).catch(function(e){m.textContent="載入失敗："+e.message}).then(function(){$("chl").disabled=false});
+  }).then(function(t){CHR.rows=bakRows(t);CHR.live=bkRun("live");CHR.loaded=true;m.textContent="已載入 "+CHR.rows.length+" 筆備份（"+tm()+"）。同一天有多筆時，圖上只取當天最新一筆；今天這一點用的是目前畫面上的數字（按「更新報價」會一併更新，尚未備份）；沒備份的日子不留空。滑鼠移到圖上或手指點圖，可看該日的數字。";buildCharts()}).catch(function(e){m.textContent="載入失敗："+e.message}).then(function(){$("chl").disabled=false});
 }
 $("chl").onclick=loadCharts;
 $("chd").onchange=function(){CHR.days=+$("chd").value;if(CHR.loaded)drawAll()};
