@@ -127,7 +127,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-i</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-j</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -284,7 +284,7 @@ function reb(c,A,tg,tp,Cq,pc){
 function calc(){
   marks();var tp={},tc={},tg={},A=0;G.forEach(function(g){tp[g.k]=0;tc[g.k]=0;tg[g.k]=0});
   S.stocks.forEach(function(s,i){
-    var v=s.qty*(isCash(s)?1:s.price),c=s.qty*(isCash(s)?1:s.cost),pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;tc[s.g]=(tc[s.g]||0)+c*r;
+    var v=s.qty*(isCash(s)?1:s.price),c=s.qty*(isCash(s)?1:s.cost),pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;tc[s.g]=(tc[s.g]||0)+(isCash(s)?0:c*r);
     $("sv"+i).closest("tr").classList.toggle("cashr",isCash(s));$("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
     var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl*r)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
     el.className=pl>=0?"up":"dn";
@@ -410,6 +410,7 @@ function bkRun(dlOnly){
     });
   }
   bakReb("","",S);bakReb("w","TW ",S.w);
+  var cs={cash:0,tcash:0};S.stocks.forEach(function(s){if(isCash(s)&&(s.g in cs))cs[s.g]+=s.qty*(s.cur==="USD"?S.fx:1)});add("類現金 其中現金",cs.cash);add("TW 類現金 其中現金",cs.tcash);
   S.stocks.forEach(function(s,i){var pf="持股"+(i+1)+" ";
     add(pf+"群組",gn[s.g]||s.g);add(pf+"代號",s.sym);add(pf+"幣別",s.cur);add(pf+"股數",s.qty);add(pf+"成本價",s.cost);add(pf+"現價",s.price);
     add(pf+"市值(原幣)",nm_("sv"+i)[0]);var m=nm_("sp"+i);add(pf+"損益(台幣)",m[0]);add(pf+"損益 %",m[1]);add(pf+"折合台幣市值",nm_("st"+i)[0]);
@@ -462,11 +463,11 @@ $("csave").onclick=function(){
 /* ---------- 圖表 ---------- */
 var CHR={rows:[],live:null,loaded:false,days:0,scope:0,cl:0},PAL=["#3b82c4","#e08a3c","#2f9e7a","#a06cc8","#e11d74"];
 var SCOPES=[["全部股票","股票市值(台幣)","股票總損益(台幣)"],["個股","個股 市值","個股 損益"],["CLEC-TW","CLEC-TW 市值","CLEC-TW 損益"],["CLEC-US","CLEC 市值","CLEC 損益"],["原型（US）","原型 市值","原型 損益"],["槓桿 x2（US）","槓桿 x2 市值","槓桿 x2 損益"],["類現金（US）","類現金 市值","類現金 損益"],["原型（TW）","TW 原型 市值","TW 原型 損益"],["槓桿 x2（TW）","TW 槓桿 x2 市值","TW 槓桿 x2 損益"],["類現金（TW）","TW 類現金 市值","TW 類現金 損益"]];
-var CLS=[["CLEC-US",["原型","原型 市值","原型 損益"],["槓桿 x2","槓桿 x2 市值","槓桿 x2 損益"],["類現金","類現金 市值","類現金 損益"]],["CLEC-TW",["原型","TW 原型 市值","TW 原型 損益"],["槓桿 x2","TW 槓桿 x2 市值","TW 槓桿 x2 損益"],["類現金","TW 類現金 市值","TW 類現金 損益"]]];
+var CLS=[["CLEC-US",["原型","原型 市值","原型 損益"],["槓桿 x2","槓桿 x2 市值","槓桿 x2 損益"],["類現金","類現金 市值","類現金 損益","類現金 其中現金"]],["CLEC-TW",["原型","TW 原型 市值","TW 原型 損益"],["槓桿 x2","TW 槓桿 x2 市值","TW 槓桿 x2 損益"],["類現金","TW 類現金 市值","TW 類現金 損益","TW 類現金 其中現金"]]];
 function csvParse(t){var rows=[],r=[],f="",inq=false,i=0,c;t=t.replace(/^﻿/,"");for(;i<t.length;i++){c=t[i];if(inq){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=c}else if(c==='"')inq=true;else if(c===","){r.push(f);f=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;r.push(f);f="";rows.push(r);r=[]}else f+=c}if(f!==""||r.length){r.push(f);rows.push(r)}return rows.filter(function(x){return x.length>1||x[0]!==""})}
 function bakRows(text){var P=csvParse(text);if(P.length<2)return[];var H=P[0];return P.slice(1).map(function(r){var o={};H.forEach(function(h,i){o[h]=r[i]});o._t=new Date(String(o["備份時間"]||"").replace(" ","T")).getTime();return o}).filter(function(o){return isFinite(o._t)}).sort(function(a,b){return a._t-b._t})}
 function nv(o,k){var v=o[k];if(v==null||v==="")return null;v=parseFloat(String(v).replace(/,/g,""));return isFinite(v)?v:null}
-function plPct(mc,pc){return function(o){var m=nv(o,mc),p=nv(o,pc);if(m==null||p==null)return null;var c=m-p;return c>0?p/c*100:null}}
+function plPct(mc,pc,cc){return function(o){var m=nv(o,mc),p=nv(o,pc);if(m==null||p==null)return null;var k=0;(cc||[]).forEach(function(x){k+=nv(o,x)||0});var c=m-p-k;return c>0?p/c*100:null}}
 function niceTicks(lo,hi,n){if(!(hi>lo)){var d=Math.abs(lo)*0.1||1;lo-=d;hi+=d}var raw=(hi-lo)/n,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p,st=(f<1.5?1:f<3?2:f<7?5:10)*p,a=Math.floor(lo/st+1e-9)*st,b=Math.ceil(hi/st-1e-9)*st,t=[],v;for(v=a;v<=b+st/2;v+=st)t.push(Math.round(v/st)*st);return{t:t,lo:t[0],hi:t[t.length-1]}}
 var AXF={wan:function(v){var a=Math.abs(v/1e4);return v===0?"0":(a>=100?Math.round(v/1e4):Math.round(v/1e3)/10)+"萬"},pct:function(v){return (Math.round(v*10)/10)+"%"},pct0:function(v){return v+"%"},fx:function(v){return (Math.round(v*100)/100).toFixed(2)}};
 var FULL={wan:function(v){return Math.round(v).toLocaleString("zh-TW")},pct:function(v){return v.toFixed(1)+"%"},pct0:function(v){return v.toFixed(1)+"%"},fx:function(v){return v.toFixed(3)}};
@@ -518,8 +519,8 @@ function drawAll(){
   drawChart($("ch0"),{axes:[{f:"wan"},{f:"wan"}],series:[{name:sc[0]+" 市值",col:sc[1],type:"line",axis:0},{name:sc[0]+" 損益",col:sc[2],type:"bar",axis:1}]},rows);
   drawChart($("ch1"),{stack:true,axes:[{f:"pct0"},{f:"pct"}],series:[{name:"淨值",val:function(o){return nv(o,"淨值")}},{name:"總負債",val:function(o){return nv(o,"總負債")}}],lines:[{name:"股票市值 / 負債",col:"股票市值/負債 %"}]},rows);
   drawChart($("ch3"),{stack:true,series:[{name:"個股",val:function(o){return nv(o,"個股 市值")}},{name:"CLEC-TW",val:function(o){return nv(o,"CLEC-TW 市值")}},{name:"CLEC-US",val:function(o){return nv(o,"CLEC 市值")}}]},rows);
-  drawChart($("ch4"),{axes:[{f:"pct"},{f:"fx"}],series:[{name:"個股",col:plPct("個股 市值","個股 損益")},{name:"CLEC-TW",col:plPct("CLEC-TW 市值","CLEC-TW 損益")},{name:"CLEC-US",col:plPct("CLEC 市值","CLEC 損益")},{name:"全部股票",col:plPct("股票市值(台幣)","股票總損益(台幣)")},{name:"匯率 USD→TWD",col:"匯率 USD→TWD",axis:1}]},rows);
-  drawChart($("ch5"),{axes:[{f:"pct"}],series:cl.slice(1).map(function(x){return{name:x[0],col:plPct(x[1],x[2])}})},rows);
+  drawChart($("ch4"),{axes:[{f:"pct"},{f:"fx"}],series:[{name:"個股",col:plPct("個股 市值","個股 損益")},{name:"CLEC-TW",col:plPct("CLEC-TW 市值","CLEC-TW 損益",["TW 類現金 其中現金"])},{name:"CLEC-US",col:plPct("CLEC 市值","CLEC 損益",["類現金 其中現金"])},{name:"全部股票",col:plPct("股票市值(台幣)","股票總損益(台幣)",["類現金 其中現金","TW 類現金 其中現金"])},{name:"匯率 USD→TWD",col:"匯率 USD→TWD",axis:1}]},rows);
+  drawChart($("ch5"),{axes:[{f:"pct"}],series:cl.slice(1).map(function(x){return{name:x[0],col:plPct(x[1],x[2],x[3]?[x[3]]:null)}})},rows);
 }
 function buildCharts(){
   var sel=function(id,arr,cur){return'<select id="'+id+'">'+arr.map(function(x,i){return'<option value="'+i+'"'+(i===cur?" selected":"")+'>'+x[0]+'</option>'}).join("")+'</select>'};
