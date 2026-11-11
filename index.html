@@ -126,7 +126,7 @@ h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-11-b</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-a</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -439,7 +439,9 @@ function bkRun(dlOnly){
   var url=GH+"/repos/"+cfg.br+"/contents/"+fn,h={"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github+json"};
   function bad(r){return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))})}
   fetch(url,{headers:h,cache:"no-store"}).then(function(r){if(r.status===404)return null;if(!r.ok)return bad(r);return r.json()}).then(function(j){
-    var old="";if(j&&j.content)old=decodeURIComponent(escape(atob(j.content.replace(/\s/g,""))));else if(j&&j.size>0)throw new Error("備份檔超過 1MB，無法再追加，請把舊檔改名封存後再備份");var body={message:"備份 "+ts,content:btoa(unescape(encodeURIComponent(merge(old))))};if(j&&j.sha)body.sha=j.sha;
+    if(j&&!j.content&&j.size>0)return fetch(url,{headers:{"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github.raw+json"},cache:"no-store"}).then(function(r){if(!r.ok)return bad(r);return r.text()}).then(function(t){return{sha:j.sha,old:t}});
+    return{sha:j&&j.sha,old:j&&j.content?decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))):""}}).then(function(j){
+    var old=j.old,body={message:"備份 "+ts,content:btoa(unescape(encodeURIComponent(merge(old))))};if(j&&j.sha)body.sha=j.sha;
     return fetch(url,{method:"PUT",headers:h,body:JSON.stringify(body)})
   }).then(function(r){if(!r.ok)return bad(r);bm.textContent="☁️ 已備份到 GitHub（"+tm()+"）";if(CHR.loaded)loadCharts()}).catch(function(e){dl();bm.textContent="上傳失敗："+e.message+"，已改為下載檔案"});
 }

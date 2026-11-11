@@ -1,0 +1,30 @@
+name: auto-backup
+on:
+  schedule:
+    - cron: "0 10 * * *"   # 每天 UTC 10:00 = 台灣時間 18:00（GitHub 排程可能延遲數分鐘到數十分鐘）
+  workflow_dispatch: {}     # 也可在 Actions 頁面手動執行一次測試
+permissions:
+  contents: read
+  actions: write            # 只用來避免「60 天沒活動排程被停用」
+concurrency: auto-backup
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-save playwright@1.49.1 && npx playwright install --with-deps chromium
+      - run: node scripts/auto-backup.js
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
+          BACKUP_REPO: ${{ secrets.BACKUP_REPO }}
+      - name: keep schedule alive
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/auto-backup.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ github.token }}
