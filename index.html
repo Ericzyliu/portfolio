@@ -126,7 +126,7 @@ h2,#rebs,#sg_stock,#sg_clecw,#sg_clec{scroll-margin-top:16px}
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-g</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-12-h</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -265,17 +265,17 @@ function reb(c,A,tg,tp,Cq,pc){
   $(p+"rb").innerHTML="原型損益 <b>"+fmt(gp)+"</b> 元（"+(gp>0?"漲":gp<0?"跌":"持平")+"）。<br>"+(gp>0?"漲：賣出槓桿 ETF 約 <b>"+fmt(upv)+"</b> 元（槓桿損益 "+fmt(gl)+" 的 "+O.up+"%），轉進類現金。":gp<0?"跌：賣出類現金約 <b>"+fmt(dnv)+"</b> 元（整個資產 "+fmt(A)+" 的 "+O.dn+"%"+(dnr>tg[kc]?"，已受類現金市值限制":"")+"），逢低加碼買回槓桿 ETF。":"目前不需要動作。");
   $(p+"s1").style.display=O.st===1?"":"none";$(p+"s2").style.display=O.st===2?"":"none";
   var ks=[kp,kl,kc],nm={},tv={};nm[kp]="原型";nm[kl]="槓桿 x2";nm[kc]="類現金";tv[kp]=O.tr.proto;tv[kl]=O.tr.lev;tv[kc]=O.tr.cash;
-  var ts=tv[kp]+tv[kl]+tv[kc],NW=Math.max(0,O.nw||0),NWr=Math.round(NW);
+  var ts=tv[kp]+tv[kl]+tv[kc],NW=Math.max(0,O.nw||0),NWr=Math.round(NW),CA=0;S.stocks.forEach(function(s){if(s.g===kc&&isCash(s))CA+=s.qty*(s.cur==="USD"?S.fx:1)});var CAr=Math.round(CA),NWp=NW+CA;
   if(ts>0){
     var Tt=Cq+NW,d={},act=ks.slice(),lam=0,ch=true,xs={},xr={},sm=0,msg2=[];
-    ks.forEach(function(k){d[k]=tv[k]/ts*Tt-tg[k]});
-    while(ch){lam=(act.reduce(function(a,k){return a+d[k]},0)-NW)/act.length;ch=false;var na=act.filter(function(k){return d[k]-lam>0});if(na.length>0&&na.length!==act.length){act=na;ch=true}}
+    ks.forEach(function(k){d[k]=tv[k]/ts*Tt-(tg[k]-(k===kc?CA:0))});
+    while(ch){lam=(act.reduce(function(a,k){return a+d[k]},0)-NWp)/act.length;ch=false;var na=act.filter(function(k){return d[k]-lam>0});if(na.length>0&&na.length!==act.length){act=na;ch=true}}
     ks.forEach(function(k){xs[k]=Math.max(0,d[k]-lam);xr[k]=Math.round(xs[k]);sm+=xr[k]});
-    var big=ks.slice().sort(function(a,b){return xr[b]-xr[a]})[0];xr[big]+=NWr-sm;
+    var big=ks.slice().sort(function(a,b){return xr[b]-xr[a]})[0];xr[big]+=NWr+CAr-sm;ks.forEach(function(k){if(k===kc)xr[k]-=CAr});
     $(p+"s2b").innerHTML=ks.map(function(k){return "<tr><td>"+nm[k]+"</td><td>"+fmt(tg[k])+"</td><td>"+pc(tg[k],Cq)+"</td><td>"+(tv[k]/ts*100).toFixed(1)+"%</td><td><b>"+fmt(xr[k])+"</b></td><td>"+pc(tg[k]+xr[k],Cq+NWr)+"</td></tr>"}).join("");
     if(Math.round(ts*100)!==10000)msg2.push("目標比例合計 "+ts.toFixed(1)+"%，已換算成 100%。");
-    if(!NW)msg2.push("請輸入新增投入金額。");
-    ks.forEach(function(k){if(NW&&xr[k]===0&&d[k]<0)msg2.push(nm[k]+"目前比例已高於目標，本次不投入。")});
+    if(!NW&&!CA)msg2.push("請輸入新增投入金額。");if(CA>0)msg2.push("類現金內的現金 "+fmt(CA)+" 元不用賣，已和新增投入一起參與目標比例；類現金建議投入為負數＝動用現金。");
+    ks.forEach(function(k){if((NW||CA)&&xr[k]===0&&d[k]<0)msg2.push(nm[k]+"目前比例已高於目標，本次不投入。")});
     if(msg2.length&&NW&&ks.some(function(k){return xr[k]===0&&d[k]<0}))msg2.push("只買不賣，所以是盡量接近目標。");
     $(p+"s2m").textContent=msg2.join(" ")||"依目前比例分配新增投入，三類合計等於新增金額。";
   }else{$(p+"s2b").innerHTML="";$(p+"s2m").textContent="請至少給一個大於 0 的目標比例。"}
