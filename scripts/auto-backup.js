@@ -12,7 +12,7 @@ const cfg = {
 const url = process.env.PAGE_URL || "file://" + path.resolve(__dirname, "..", "index.html");
 (async () => {
   const b = await chromium.launch(process.env.CI ? { channel: "chrome" } : {}); // GitHub 主機內建 Chrome，不必下載瀏覽器
-  const pg = await b.newPage();
+  const pg = await b.newPage({ timezoneId: "Asia/Taipei", locale: "zh-TW" }); // 主機是 UTC，指定台灣時區，備份時間才會是台灣時間
   pg.on("pageerror", (e) => console.error("pageerror:", e.message));
   await pg.addInitScript((c) => { try { localStorage.setItem("portfolio-cfg-v1", JSON.stringify(c)); } catch (e) {} }, cfg);
   await pg.goto(url);
