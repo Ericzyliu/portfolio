@@ -10,7 +10,27 @@ const cfg = {
   bt: process.env.BACKUP_TOKEN, br: process.env.BACKUP_REPO, gid: "",
 };
 const url = process.env.PAGE_URL || "file://" + path.resolve(__dirname, "..", "index.html");
+// 台股交易日檢查：用 FinMind 的「TaiwanStockTradingDate」交易日曆。
+// 只有「查得到今天之後的交易日、但今天不在其中」才判定休市；查不到或出錯一律照常備份（寧可多備一次，不要漏）。
+async function marketClosedToday(fetchFn = fetch) {
+  const f = (d) => d.toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" });
+  const now = new Date(), today = f(now), end = f(new Date(now.getTime() + 21 * 864e5));
+  try {
+    const h = process.env.FINMIND_TOKEN ? { Authorization: "Bearer " + process.env.FINMIND_TOKEN } : {};
+    const r = await fetchFn(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDate&start_date=${today}&end_date=${end}`, { headers: h });
+    const j = await r.json();
+    const ds = ((j && j.data) || []).map((x) => String(x.date).slice(0, 10));
+    if (!r.ok || !ds.length) return { closed: false, why: "查不到交易日曆，照常備份" };
+    return ds.includes(today) ? { closed: false, why: today + " 是交易日" } : { closed: true, why: today + " 台股休市" };
+  } catch (e) { return { closed: false, why: "交易日曆查詢失敗（" + e.message + "），照常備份" }; }
+}
+module.exports = { marketClosedToday };
+if (require.main !== module) return;
+
 (async () => {
+  const cal = await marketClosedToday();
+  console.log("交易日檢查：", cal.why);
+  if (cal.closed && process.env.GITHUB_EVENT_NAME === "schedule") { console.log("休市日，跳過本次備份"); return; }
   const b = await chromium.launch(process.env.CI ? { channel: "chrome" } : {}); // GitHub 主機內建 Chrome，不必下載瀏覽器
   const pg = await b.newPage({ timezoneId: "Asia/Taipei", locale: "zh-TW" }); // 主機是 UTC，指定台灣時區，備份時間才會是台灣時間
   pg.on("pageerror", (e) => console.error("pageerror:", e.message));
