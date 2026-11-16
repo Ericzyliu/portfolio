@@ -1,7 +1,7 @@
 name: auto-backup
 on:
   schedule:
-    - cron: "30 9 * * 1-5" # 週一到週五 UTC 09:30 = 台灣時間 17:30（GitHub 排程常延遲數分鐘到數十分鐘）；國定假日休市日由腳本再判斷並跳過
+    - cron: "30 9 * * 1-6" # 週一到週六 UTC 09:30 = 台灣時間 17:30，週日不執行（GitHub 排程常延遲數分鐘到數十分鐘）
   workflow_dispatch: {}     # 也可在 Actions 頁面手動執行一次測試
 permissions:
   contents: read
