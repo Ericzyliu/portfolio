@@ -20,6 +20,8 @@ h1{font-size:22px;margin:0 0 4px}
 .v{font-size:21px;font-weight:650;margin-top:2px}
 h2{font-size:16px;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:center}
 .scroll{overflow-x:auto}
+.scroll th:first-child,.scroll td:first-child{position:sticky;left:0;z-index:2;background:var(--card);box-shadow:6px 0 6px -4px rgba(0,0,0,.18);padding-right:10px}
+.blk .blk .scroll th:first-child,.blk .blk .scroll td:first-child{background:var(--bg)}
 table{width:100%;border-collapse:collapse;min-width:780px;font-size:14px}
 th{font-weight:500;color:var(--mu);font-size:12px;text-align:right;padding:6px 6px}
 th:first-child,td:first-child{text-align:left}
@@ -138,7 +140,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-18-a</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-20-a</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
