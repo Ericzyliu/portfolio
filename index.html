@@ -74,6 +74,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
 <main>
   <div class="bh" style="justify-content:space-between;margin-bottom:12px"><h1 style="margin:0">股票與負債總覽</h1><span style="display:flex;gap:8px;align-items:center"><span class="k" id="bkm"></span><button class="p" id="rf">更新報價</button><button class="p" id="bk">備份</button><button id="dk">下載</button></span></div>
   <div class="k" id="rfs" style="margin:-4px 0 10px">按「更新報價」自動更新美股現價、台股收盤價與匯率</div>
+  <div class="card row" style="margin-bottom:10px"><label for="fx">匯率 USD → TWD</label><input type="number" step="any" id="fx" style="width:110px"><span class="k">按「更新報價」會自動更新匯率，也可手動修改</span></div>
   <div class="grid">
     <div class="card"><div class="k">股票市值（折合台幣）</div><div class="v" id="sAssets"></div><div class="k" style="margin-top:4px">損益 <b id="sPL"></b></div></div>
     <div class="card"><div class="k">總負債</div><div class="v" id="sDebt"></div></div>
@@ -88,7 +89,6 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     <div class="bar"><i id="bD" style="background:var(--debt)"></i></div>
   </div>
 
-  <div class="card row" style="margin-top:18px"><label for="fx">匯率 USD → TWD</label><input type="number" step="any" id="fx" style="width:110px"><span class="k">按「更新報價」會自動更新匯率，也可手動修改</span></div>
   <h2>股票</h2>
   <div id="segs"></div>
   <div id="rebs"></div>
@@ -140,7 +140,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-b</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-c</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -619,7 +619,7 @@ function drawAll(){
 function buildCharts(){
   var sel=function(id,arr,cur){return'<select id="'+id+'">'+arr.map(function(x,i){return'<option value="'+i+'"'+(i===cur?" selected":"")+'>'+x[0]+'</option>'}).join("")+'</select>'};
   var blk=function(t,id,extra,last){return'<div class="chwrap"'+(last?' style="margin-bottom:0"':'')+'><div class="bh"><b>'+t+'</b>'+(extra||"")+'</div><div id="'+id+'"></div></div>'};
-  $("chs").innerHTML='<div style="margin-top:12px"></div>'+blk("市值 ＋ 損益（台幣）","ch0",sel("chsc",SCOPES,CHR.scope))+blk("股票市值的組成：淨值 vs 總負債（%）＋ 股票市值 / 負債（%，右軸）","ch1")+blk("各部位佔整個資產（%）","ch3")+blk("各部位損益 %（損益 ÷ 成本）","ch4")+blk("CLEC 內各類損益 %（損益 ÷ 成本）","ch5",sel("chcl",CLS,CHR.cl))+blk("整體三類佔比（%）＋ 有效曝險倍數（右軸）","ch6","",true);
+  $("chs").innerHTML='<div style="margin-top:12px"></div>'+blk("市值 ＋ 損益（台幣）","ch0",sel("chsc",SCOPES,CHR.scope))+blk("股票市值的組成：淨值 vs 總負債（%）＋ 股票市值 / 負債（%，右軸）","ch1")+blk("整體三類佔比（%）＋ 有效曝險倍數（右軸）","ch6")+blk("各部位佔整個資產（%）","ch3")+blk("各部位損益 %（損益 ÷ 成本）","ch4")+blk("CLEC 內各類損益 %（損益 ÷ 成本）","ch5",sel("chcl",CLS,CHR.cl),true);
   $("chsc").onchange=function(){CHR.scope=+$("chsc").value;drawAll()};
   $("chcl").onchange=function(){CHR.cl=+$("chcl").value;drawAll()};
   drawAll();
