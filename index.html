@@ -142,7 +142,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-g</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-h</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -209,9 +209,9 @@ function push(){
 function flush(){if(tmr&&cfg.gh&&synced&&cfg.gid){clearTimeout(tmr);tmr=null;doPush(true)}}
 function editing(){var a=document.activeElement;return a&&a.tagName==="INPUT"&&a.id!=="ret"&&a.id!=="cgh"&&a.id!=="cfh"&&a.id!=="cfm"&&a.id!=="cbt"&&a.id!=="cbr"}
 function applyRemote(r){S=norm(JSON.parse(JSON.stringify(r)));quiet=true;$("ret").value=S.ret;$("fx").value=S.fx;rows();quiet=false}
-function pull(){
+function pull(quiet0){
   if(!cfg.gh){synced=false;setSync("尚未設定 GitHub token：資料只存在這個裝置");return Promise.resolve()}
-  setSync("同步中…");
+  if(!quiet0)setSync("同步中…");
   return findGist().then(function(id){
     if(!id){if(!S.updated)S.updated=Date.now();return createGist().then(function(){synced=true;setSync("☁️ 已建立雲端資料（"+tm()+"）")})}
     return ghf("/gists/"+id,{inm:etag}).then(function(g){if(g.nm){synced=true;if((S.updated||0)>lastRu)push();setSync("☁️ 已同步（"+tm()+"）");return}
@@ -649,8 +649,8 @@ var rzt;window.addEventListener("resize",function(){clearTimeout(rzt);rzt=setTim
 $("ret").value=S.ret;$("fx").value=S.fx;
 quiet=true;rows();quiet=false;
 pull();
-setInterval(function(){if(!document.hidden)pull()},120000);
-document.addEventListener("visibilitychange",function(){if(document.hidden)flush();else pull()});window.addEventListener("pagehide",flush);
+setInterval(function(){if(!document.hidden)pull(true)},120000);
+document.addEventListener("visibilitychange",function(){if(document.hidden)flush();else pull(true)});window.addEventListener("pagehide",flush);
 $("sb").onclick=function(){pull()};
 })();
 </script>
