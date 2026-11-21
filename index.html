@@ -140,7 +140,15 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-c</div></div>
+  <details class="card" id="bfd" style="margin-top:10px"><summary>🛠 補齊備份檔：用目前的倍數回填歷史的「整體」與「有效曝險」欄位</summary>
+    <div style="display:grid;gap:10px;margin-top:12px">
+      <div class="k">舊的備份列沒有「整體 原型／槓桿／類現金」與「有效曝險」欄位。這個工具會用每列當時的持股，搭配你現在在網頁上設定的倍數（x1／x2／x3），算出這些欄位補上去。只補缺的欄位，已有的資料不會被改。先按「預覽」確認，再下載或上傳。</div>
+      <div class="row"><label class="k">從 <input type="date" id="bfa"></label><label class="k">到（留空＝到最新）<input type="date" id="bfb"></label></div>
+      <div class="row"><button id="bfpv">預覽</button><button id="bfdl" disabled>下載補齊檔</button><button class="p" id="bfup" disabled>上傳覆蓋到 GitHub</button><span class="k" id="bfm"></span></div>
+      <div id="bfo" class="k" style="overflow-x:auto"></div>
+    </div>
+  </details>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-d</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -478,7 +486,7 @@ $("bk").onclick=function(){bkRun(false)};$("dk").onclick=function(){bkRun(true)}
   var FN="portfolio-backup.csv",FXG={"個股":"stock","原型":"proto","槓桿 x2":"lev","類現金":"cash","TW 原型":"tproto","TW 槓桿 x2":"tlev","TW 類現金":"tcash"},FX=null;
   function num(x,d){var v=parseFloat(x);return v===v?v:d}
   function has(x){return x!=null&&x!==""}
-  function lvOf(g,sym,col){var v=parseFloat(col);if(v>=1)return v;if(g==="lev"||g==="tlev")return 2;if(g!=="stock")return 1;var m=S.stocks.filter(function(x){return x.g==="stock"&&tick1(x.sym)===tick1(sym)})[0];return m&&m.lv>1?m.lv:1}
+  function lvOf(g,sym,col){var v=parseFloat(col);if(v>=1)return v;if(g!=="stock"&&g!=="lev"&&g!=="tlev")return 1;var m=S.stocks.filter(function(x){return x.g===g&&tick1(x.sym)===tick1(sym)})[0];return m?mult(m):(g==="stock"?1:2)}
   function fxState(o){
     var T=JSON.parse(JSON.stringify(S)),st=[],i,g;
     for(i=1;i<=80;i++){g=o["持股"+i+" 群組"];if(!has(g))continue;if(!FXG[g])return null;
@@ -543,6 +551,36 @@ $("bk").onclick=function(){bkRun(false)};$("dk").onclick=function(){bkRun(true)}
       var url=GH+"/repos/"+cfg.br+"/contents/"+FN,body={message:"修正股票分割 "+f.sym+" 1拆"+f.N+"（"+f.pl.out.length+" 列）",content:btoa(unescape(encodeURIComponent(f.pl.csv))),sha:f.sha};
       return fetch(url,{method:"PUT",headers:{"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github+json"},body:JSON.stringify(body)}).then(function(r){if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))})})
     }).then(function(){m.textContent="☁️ 已上傳修正（"+tm()+"）";FX=null;if(CHR.loaded)loadCharts()}).catch(function(e){m.textContent="上傳失敗："+e.message;setBtn(!!FX)})};
+  /* 補齊歷史欄位 */
+  var BF=null,bm2=$("bfm");
+  function bfPlan(text,a,b){
+    var P=csvParse(text);if(P.length<2)throw new Error("備份檔是空的");
+    var H=P[0].slice(),rs=P.slice(1).map(function(r){var o={};P[0].forEach(function(h,i){o[h]=r[i]==null?"":r[i]});return o}),out=[],skip=0;
+    rs.forEach(function(o){var d=String(o["備份時間"]||"").slice(0,10);if(!d||d<a||(b&&d>b))return;
+      var T=fxState(o);if(!T){skip++;return}
+      var nr=calcRow(T),add=0;
+      Object.keys(nr).forEach(function(k){if(k==="_t"||k==="備份時間")return;if(H.indexOf(k)<0)H.push(k);if(!has(o[k])&&has(nr[k])){o[k]=String(nr[k]);add++}});
+      if(add)out.push({d:o["備份時間"],n:add,e:nr["整體 有效曝險倍數(÷整個資產)"],o:nr["整體 槓桿 佔整個資產 %"]})});
+    return{rs:rs,H:H,out:out,skip:skip,csv:toCsv(H,rs)}}
+  function bfBtn(on){$("bfdl").disabled=!on;$("bfup").disabled=!on}
+  $("bfpv").onclick=function(){var a=$("bfa").value,b=$("bfb").value;bfBtn(false);BF=null;$("bfo").innerHTML="";
+    if(!a){bm2.textContent="請選起始日期";return}
+    if(!(cfg.bt&&cfg.br)){bm2.textContent="請先在上面填好備份用 token 與 repo";return}
+    bm2.textContent="讀取備份檔…";
+    fetchCsv().then(function(f){var pl=bfPlan(f.text,a,b);
+      if(!pl.out.length){bm2.textContent="這個範圍內沒有需要補的欄位"+(pl.skip?"（"+pl.skip+" 列無法解析）":"");return}
+      BF={sha:f.sha,pl:pl};
+      $("bfo").innerHTML='<table style="width:100%;font-size:13px"><thead><tr><th>備份時間</th><th>補上欄位數</th><th>整體 槓桿佔比</th><th>有效曝險倍數</th></tr></thead><tbody>'+pl.out.map(function(x){return"<tr><td>"+esc2(x.d)+"</td><td>"+x.n+"</td><td>"+esc2(x.o)+"</td><td>"+esc2(x.e)+"x</td></tr>"}).join("")+"</tbody></table>";
+      bm2.textContent="將補齊 "+pl.out.length+" 列"+(pl.skip?"（另有 "+pl.skip+" 列無法解析，未動）":"")+"。確認無誤再下載或上傳。";bfBtn(true)}).catch(function(e){bm2.textContent="失敗："+e.message})};
+  $("bfdl").onclick=function(){if(!BF)return;var u=unescape(encodeURIComponent(BF.pl.csv.replace(/^\ufeff/,""))),by=new Uint8Array(u.length+3),i;by[0]=0xEF;by[1]=0xBB;by[2]=0xBF;for(i=0;i<u.length;i++)by[i+3]=u.charCodeAt(i);var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([by],{type:"text/csv;charset=utf-8"}));a.download=FN;document.body.appendChild(a);a.click();a.remove()};
+  $("bfup").onclick=function(){if(!BF)return;
+    if(!window.confirm("要用補齊後的內容覆蓋 GitHub 上的備份檔嗎？（GitHub 會保留舊版本，可還原）"))return;
+    var f=BF;bm2.textContent="上傳中…";bfBtn(false);
+    fetchCsv().then(function(cur){
+      if(cur.sha!==f.sha)throw new Error("備份檔在預覽後有變動，請重新按預覽");
+      var url=GH+"/repos/"+cfg.br+"/contents/"+FN,body={message:"補齊歷史欄位：整體與有效曝險（"+f.pl.out.length+" 列）",content:btoa(unescape(encodeURIComponent(f.pl.csv))),sha:f.sha};
+      return fetch(url,{method:"PUT",headers:{"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github+json"},body:JSON.stringify(body)}).then(function(r){if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))})})
+    }).then(function(){bm2.textContent="☁️ 已上傳（"+tm()+"）";BF=null;if(CHR.loaded)loadCharts()}).catch(function(e){bm2.textContent="上傳失敗："+e.message;bfBtn(!!BF)})};
 })();
 $("cgh").value=cfg.gh;$("cfh").value=cfg.fh;$("cfm").value=cfg.fm;$("cbt").value=cfg.bt||"";$("cbr").value=cfg.br||"";
 $("csave").onclick=function(){
