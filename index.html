@@ -142,7 +142,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-h</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-i</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -648,7 +648,7 @@ var rzt;window.addEventListener("resize",function(){clearTimeout(rzt);rzt=setTim
 /* ---------- 啟動 ---------- */
 $("ret").value=S.ret;$("fx").value=S.fx;
 quiet=true;rows();quiet=false;
-pull();
+pull().then(function(){if(cfg.bt&&cfg.br)loadCharts()});
 setInterval(function(){if(!document.hidden)pull(true)},120000);
 document.addEventListener("visibilitychange",function(){if(document.hidden)flush();else pull(true)});window.addEventListener("pagehide",flush);
 $("sb").onclick=function(){pull()};
