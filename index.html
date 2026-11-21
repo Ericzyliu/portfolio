@@ -148,7 +148,16 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
       <div id="bfo" class="k" style="overflow-x:auto"></div>
     </div>
   </details>
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-d</div></div>
+  <details class="card" id="rcd" style="margin-top:10px"><summary>🛠 修正備份檔：持股換分類（例如個股 → CLEC-US 原型）</summary>
+    <div style="display:grid;gap:10px;margin-top:12px">
+      <div class="k">把某些持股在指定日期範圍的備份列裡，改放到另一個分類，並重新計算該列的所有佔比、市值、損益、再平衡等欄位，讓歷史曲線和現在的分類一致。先按「預覽」確認，再下載或上傳。</div>
+      <div class="row"><label class="k">代號（多檔用逗號分隔）<input id="rcs" placeholder="例如 VOO,VUG" autocomplete="off" style="width:160px;text-align:left"></label><label class="k">改放到 <select id="rct"><option value="原型">CLEC-US 原型</option><option value="槓桿 x2">CLEC-US 槓桿 x2</option><option value="類現金">CLEC-US 類現金</option><option value="個股">個股</option><option value="TW 原型">CLEC-TW 原型</option><option value="TW 槓桿 x2">CLEC-TW 槓桿 x2</option><option value="TW 類現金">CLEC-TW 類現金</option></select></label></div>
+      <div class="row"><label class="k">從 <input type="date" id="rca"></label><label class="k">到 <input type="date" id="rcb"></label></div>
+      <div class="row"><button id="rcpv">預覽</button><button id="rcdl" disabled>下載修正檔</button><button class="p" id="rcup" disabled>上傳覆蓋到 GitHub</button><span class="k" id="rcm"></span></div>
+      <div id="rco" class="k" style="overflow-x:auto"></div>
+    </div>
+  </details>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-e</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -581,6 +590,38 @@ $("bk").onclick=function(){bkRun(false)};$("dk").onclick=function(){bkRun(true)}
       var url=GH+"/repos/"+cfg.br+"/contents/"+FN,body={message:"補齊歷史欄位：整體與有效曝險（"+f.pl.out.length+" 列）",content:btoa(unescape(encodeURIComponent(f.pl.csv))),sha:f.sha};
       return fetch(url,{method:"PUT",headers:{"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github+json"},body:JSON.stringify(body)}).then(function(r){if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))})})
     }).then(function(){bm2.textContent="☁️ 已上傳（"+tm()+"）";BF=null;if(CHR.loaded)loadCharts()}).catch(function(e){bm2.textContent="上傳失敗："+e.message;bfBtn(!!BF)})};
+  /* 持股換分類 */
+  var RC=null,rm=$("rcm");
+  function rcPlan(text,syms,tg,a,b){
+    var P=csvParse(text);if(P.length<2)throw new Error("備份檔是空的");
+    var H=P[0].slice(),rs=P.slice(1).map(function(r){var o={};P[0].forEach(function(h,i){o[h]=r[i]==null?"":r[i]});return o}),out=[],skip=0;
+    rs.forEach(function(o){var d=String(o["備份時間"]||"").slice(0,10);if(!d||d<a||d>b)return;
+      var T=fxState(o);if(!T){skip++;return}
+      var hit=0;T.stocks.forEach(function(x){if(syms.indexOf(tick1(x.sym))>=0&&x.g!==FXG[tg]){x.g=FXG[tg];if(x.g!=="stock"&&x.g!=="lev"&&x.g!=="tlev")x.lv=1;else if(x.g==="stock"&&x.lv<1)x.lv=1;hit++}});
+      if(!hit)return;
+      var nr=calcRow(T),before=o["整體 原型 市值"];
+      Object.keys(nr).forEach(function(k){if(k==="_t"||k==="備份時間")return;if(H.indexOf(k)<0)H.push(k);o[k]=nr[k]===undefined?"":String(nr[k])});
+      out.push({d:o["備份時間"],n:hit,s:o["個股 佔整個資產 %"],c:o["CLEC 佔整個資產 %"]})});
+    return{rs:rs,H:H,out:out,skip:skip,csv:toCsv(H,rs)}}
+  function rcBtn(on){$("rcdl").disabled=!on;$("rcup").disabled=!on}
+  $("rcpv").onclick=function(){var syms=$("rcs").value.split(/[,，\s]+/).map(tick1).filter(Boolean),tg=$("rct").value,a=$("rca").value,b=$("rcb").value;rcBtn(false);RC=null;$("rco").innerHTML="";
+    if(!syms.length||!a||!b){rm.textContent="請填代號與日期範圍";return}
+    if(!(cfg.bt&&cfg.br)){rm.textContent="請先在上面填好備份用 token 與 repo";return}
+    rm.textContent="讀取備份檔…";
+    fetchCsv().then(function(f){var pl=rcPlan(f.text,syms,tg,a,b);
+      if(!pl.out.length){rm.textContent="這個範圍內沒有需要改分類的備份列"+(pl.skip?"（"+pl.skip+" 列無法解析）":"");return}
+      RC={sha:f.sha,pl:pl,syms:syms,tg:tg};
+      $("rco").innerHTML='<table style="width:100%;font-size:13px"><thead><tr><th>備份時間</th><th>改分類檔數</th><th>修正後 個股佔比</th><th>修正後 CLEC-US佔比</th></tr></thead><tbody>'+pl.out.map(function(x){return"<tr><td>"+esc2(x.d)+"</td><td>"+x.n+"</td><td>"+esc2(x.s)+"</td><td>"+esc2(x.c)+"</td></tr>"}).join("")+"</tbody></table>";
+      rm.textContent="將修正 "+pl.out.length+" 列"+(pl.skip?"（另有 "+pl.skip+" 列無法解析，未動）":"")+"。確認無誤再下載或上傳。";rcBtn(true)}).catch(function(e){rm.textContent="失敗："+e.message})};
+  $("rcdl").onclick=function(){if(!RC)return;var u=unescape(encodeURIComponent(RC.pl.csv.replace(/^\ufeff/,""))),by=new Uint8Array(u.length+3),i;by[0]=0xEF;by[1]=0xBB;by[2]=0xBF;for(i=0;i<u.length;i++)by[i+3]=u.charCodeAt(i);var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([by],{type:"text/csv;charset=utf-8"}));a.download=FN;document.body.appendChild(a);a.click();a.remove()};
+  $("rcup").onclick=function(){if(!RC)return;
+    if(!window.confirm("要用修正後的內容覆蓋 GitHub 上的備份檔嗎？（GitHub 會保留舊版本，可還原）"))return;
+    var f=RC;rm.textContent="上傳中…";rcBtn(false);
+    fetchCsv().then(function(cur){
+      if(cur.sha!==f.sha)throw new Error("備份檔在預覽後有變動，請重新按預覽");
+      var url=GH+"/repos/"+cfg.br+"/contents/"+FN,body={message:"修正持股分類 "+f.syms.join(",")+" → "+f.tg+"（"+f.pl.out.length+" 列）",content:btoa(unescape(encodeURIComponent(f.pl.csv))),sha:f.sha};
+      return fetch(url,{method:"PUT",headers:{"Authorization":"Bearer "+cfg.bt,"Accept":"application/vnd.github+json"},body:JSON.stringify(body)}).then(function(r){if(!r.ok)return r.json().catch(function(){return{}}).then(function(b){throw new Error("GitHub "+r.status+(b.message?"："+String(b.message).split(". If you reach")[0]:""))})})
+    }).then(function(){rm.textContent="☁️ 已上傳（"+tm()+"）";RC=null;if(CHR.loaded)loadCharts()}).catch(function(e){rm.textContent="上傳失敗："+e.message;rcBtn(!!RC)})};
 })();
 $("cgh").value=cfg.gh;$("cfh").value=cfg.fh;$("cfm").value=cfg.fm;$("cbt").value=cfg.bt||"";$("cbr").value=cfg.br||"";
 $("csave").onclick=function(){
