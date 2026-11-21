@@ -140,7 +140,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-20-a</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-a</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -156,7 +156,7 @@ var fmt=function(n){return Math.round(n).toLocaleString("zh-TW")};
 var pct=function(n){return (isFinite(n)?n:0).toFixed(1)+"%"};
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
 function tm(){return new Date().toLocaleTimeString("zh-TW")}
-function norm(o){if(!o.fx)o.fx=32;if(o.ret==null)o.ret=6;if(o.up==null)o.up=30;if(o.dn==null)o.dn=2;if(!o.st)o.st=1;if(!o.tr)o.tr={proto:50,lev:30,cash:20};if(o.nw==null)o.nw=0;if(!o.w)o.w={};var w=o.w;if(w.up==null)w.up=30;if(w.dn==null)w.dn=2;if(!w.st)w.st=1;if(!w.tr)w.tr={proto:50,lev:30,cash:20};if(w.nw==null)w.nw=0;o.stocks.forEach(function(s){if(!s.cur)s.cur="TWD";if(!s.g)s.g="stock"});return o}
+function norm(o){if(!o.fx)o.fx=32;if(o.ret==null)o.ret=6;if(o.up==null)o.up=30;if(o.dn==null)o.dn=2;if(!o.st)o.st=1;if(!o.tr)o.tr={proto:50,lev:30,cash:20};if(o.nw==null)o.nw=0;if(!o.w)o.w={};var w=o.w;if(w.up==null)w.up=30;if(w.dn==null)w.dn=2;if(!w.st)w.st=1;if(!w.tr)w.tr={proto:50,lev:30,cash:20};if(w.nw==null)w.nw=0;o.stocks.forEach(function(s){if(!s.cur)s.cur="TWD";if(!s.g)s.g="stock";if(!(s.lv>1))s.lv=s.lv===3||s.lv===2?s.lv:1});return o}
 function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.stocks&&o.debts)return norm(o)}}catch(e){}return norm(JSON.parse(JSON.stringify(SAMPLE)))}
 var S=load(),quiet=false,synced=false,tmr=null;
 function setSync(t){$("sync").textContent=t+"（本頁已呼叫 GitHub "+reqN+" 次）"}
@@ -232,8 +232,10 @@ function order(arr,so,vf){var ix=arr.map(function(_,i){return i});if(so)ix.sort(
 function marks(){document.querySelectorAll("th[data-sk]").forEach(function(th){var so=th.getAttribute("data-t")==="d"?SO.d:SO.s;th.textContent=th.getAttribute("data-b")+(so&&so.k===th.getAttribute("data-sk")?(so.d<0?" ▼":" ▲"):"")})}
 var G=[{k:"stock",n:"個股"},{k:"proto",n:"原型"},{k:"lev",n:"槓桿 x2"},{k:"cash",n:"類現金"},{k:"tproto",n:"原型"},{k:"tlev",n:"槓桿 x2"},{k:"tcash",n:"類現金"}];
 var CL=[{pf:"w",id:"clecw",n:"CLEC-TW",k:{p:"tproto",l:"tlev",c:"tcash"}},{pf:"",id:"clec",n:"CLEC-US",k:{p:"proto",l:"lev",c:"cash"}}];
-var TH='<thead><tr>'+[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益（台幣）","pl"],["折合台幣","tw"]].map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>';
-function seg(g,lbl){return '<div id="sg_'+g.k+'" class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+TH+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
+var THC=[["股票","sym"],["幣別","cur"],["股數","qty"],["成本價","cost"],["現價","price"],["市值","mv"],["損益（台幣）","pl"],["折合台幣","tw"]];
+function mkTH(cols){return '<thead><tr>'+cols.map(function(c){return '<th data-sk="'+c[1]+'" data-b="'+c[0]+'" data-t="s" style="cursor:pointer" title="點一下由大到小排序，再點一次反過來">'+c[0]+'</th>'}).join('')+'<th></th></tr></thead>'}
+var TH=mkTH(THC),THS=mkTH(THC.slice(0,2).concat([["倍數","lv"]],THC.slice(2)));
+function seg(g,lbl){return '<div id="sg_'+g.k+'" class="'+(g.k==="stock"?'blk':'blk sub')+'"><div class="bh"><b>'+g.n+'</b><span class="k">市值 <b id="v_'+g.k+'"></b>　損益 <b id="p_'+g.k+'"></b></span><span class="k" style="font-size:14px">'+lbl+' <b class="rr" id="r_'+g.k+'"></b></span><span class="sp"></span><button class="p" data-add="'+g.k+'">＋ 新增</button></div><div class="scroll"><table>'+(g.k==="stock"?THS:TH)+'<tbody id="tb_'+g.k+'"></tbody></table></div></div>'}
 function clecBlk(c){return '<div id="sg_'+c.id+'" class="blk" style="border-color:var(--ac)"><div class="bh"><b>'+c.n+' 投資組合</b><span class="k">市值 <b id="v_'+c.id+'"></b>　損益 <b id="p_'+c.id+'"></b></span><span class="k" style="font-size:14px">佔整個資產 <b class="rr" id="r_'+c.id+'"></b></span></div>'+[c.k.p,c.k.l,c.k.c].map(function(k){return seg(G.filter(function(g){return g.k===k})[0],"佔 "+c.n)}).join("")+'</div>'}
 var backY=null;
 function curY(){return window.pageYOffset||document.documentElement.scrollTop||0}
@@ -249,8 +251,8 @@ function tts(){if(backY!=null&&Math.abs(curY()-backY)<60&&!jumping)backY=null;va
 var jumping=false,jt;window.addEventListener("scroll",function(){jumping=true;clearTimeout(jt);jt=setTimeout(function(){jumping=false;tts()},250)},{passive:true});
 window.addEventListener("scroll",tts,{passive:true});tts();
 $("segs").innerHTML=seg(G[0],"佔整個資產")+CL.map(clecBlk).join("");
-function card(k,t){return '<div class="card go" data-go="'+k+'" title="點一下跳到明細"><div class="k">'+t+'</div><div class="v big" id="t_'+k+'"></div><div class="k" style="margin-top:4px">市值 <b id="tv_'+k+'"></b></div><div class="k">損益 <b id="tp_'+k+'"></b></div></div>'}
-$("pair").innerHTML='<div class="blk"><div class="k" style="margin-bottom:8px">整個資產 ＝ 個股 ＋ CLEC-TW ＋ CLEC-US</div><div class="grid" style="margin:0">'+card("stock","個股 佔整個資產")+card("clecw","CLEC-TW 佔整個資產")+card("clec","CLEC-US 佔整個資產")+'</div></div>'+CL.map(function(c){return '<div class="blk"><div class="k" style="margin-bottom:8px">'+c.n+' ＝ 原型 ＋ 槓桿 x2 ＋ 類現金</div><div class="grid" style="margin:0">'+card(c.k.p,"原型 佔 "+c.n)+card(c.k.l,"槓桿 x2 佔 "+c.n)+card(c.k.c,"類現金 佔 "+c.n)+'</div></div>'}).join("");
+function card(k,t,ng){return '<div class="card'+(ng?'':' go')+'"'+(ng?'':' data-go="'+k+'" title="點一下跳到明細"')+'><div class="k">'+t+'</div><div class="v big" id="t_'+k+'"></div><div class="k" style="margin-top:4px">市值 <b id="tv_'+k+'"></b></div><div class="k">損益 <b id="tp_'+k+'"></b></div></div>'}
+$("pair").innerHTML='<div class="blk"><div class="k" style="margin-bottom:8px">整個資產 ＝ 個股 ＋ CLEC-TW ＋ CLEC-US</div><div class="grid" style="margin:0">'+card("stock","個股 佔整個資產")+card("clecw","CLEC-TW 佔整個資產")+card("clec","CLEC-US 佔整個資產")+'</div></div>'+CL.map(function(c){return '<div class="blk"><div class="k" style="margin-bottom:8px">'+c.n+' ＝ 原型 ＋ 槓桿 x2 ＋ 類現金</div><div class="grid" style="margin:0">'+card(c.k.p,"原型 佔 "+c.n)+card(c.k.l,"槓桿 x2 佔 "+c.n)+card(c.k.c,"類現金 佔 "+c.n)+'</div></div>'}).join("")+'<div class="blk"><div class="k" style="margin-bottom:8px">整體（整個資產）＝ 原型 ＋ 槓桿 ＋ 類現金　<span style="font-size:12px">（個股 x1 算原型，x2／x3 算槓桿；CLEC-TW 與 CLEC-US 依各自分類合併）</span></div><div class="grid" style="margin:0">'+card("oproto","整體 原型 佔整個資產",1)+card("olev","整體 槓桿 佔整個資產",1)+card("ocash","整體 類現金 佔整個資產",1)+'</div></div>';
 function rebBlk(c){var p=c.pf,us=!p;return '<div class="blk" style="border-color:#e08a3c"><div class="bh"><b>'+c.n+' 再平衡</b><span class="sp"></span><select id="'+p+'st"><option value="1">策略一：漲跌規則</option><option value="2">策略二：目標比例＋新增投入</option></select></div>'+
  '<div id="'+p+'s1"><div class="row"><label>漲：賣槓桿當年獲利的 <input type="number" id="'+p+'up" step="any" style="width:80px"> %</label><label>跌：賣類現金，整個資產的 <input type="number" id="'+p+'dn" step="any" style="width:80px"> %</label></div><div class="note" id="'+p+'rb"></div>'+
  '<div class="k" style="margin-top:8px;line-height:1.8">'+(us?'① 原型 ETF 永遠不動：再平衡時，原型（QQQ／00662）從來不做再平衡。':'① 原型 ETF 永遠不動：再平衡時，原型從來不做再平衡。')+'<br>② 漲：只賣槓桿 ETF「當年獲利」的設定比例（預設 30%），轉進類現金'+(us?'（00865B）':'')+'。<br>③ 跌：賣類現金「當下整個資產」的設定比例（預設 2%），逢低加碼買回槓桿 ETF。<br>以 '+c.n+' 原型目前的損益判斷漲或跌；「當年獲利」以槓桿持股的損益計，若要以年初起算，請把成本價改填年初價。</div></div>'+
@@ -263,6 +265,7 @@ function rows(){
   G.forEach(function(g){var f=function(s,i){
     return '<tr><td><input data-t="s" data-i="'+i+'" data-f="sym" value="'+esc(s.sym)+'"></td>'+
     '<td><select data-t="s" data-i="'+i+'" data-f="cur"><option value="TWD"'+(s.cur==="TWD"?" selected":"")+'>TWD</option><option value="USD"'+(s.cur==="USD"?" selected":"")+'>USD</option></select></td>'+
+    (g.k==="stock"?'<td><select data-t="s" data-i="'+i+'" data-f="lv" title="個股本身的槓桿倍數：x1 算原型，x2／x3 算槓桿">'+[1,2,3].map(function(n){return '<option value="'+n+'"'+((s.lv||1)===n?" selected":"")+'>x'+n+'</option>'}).join('')+'</select></td>':'')+
     ['qty','cost','price'].map(function(f){return '<td><input type="number" step="any" data-t="s" data-i="'+i+'" data-f="'+f+'" value="'+s[f]+'"></td>'}).join('')+
     '<td id="sv'+i+'"></td><td id="sp'+i+'"></td><td id="st'+i+'"></td><td><button class="x" data-del="s" data-i="'+i+'" aria-label="刪除">✕</button></td></tr>';
   };$("tb_"+g.k).innerHTML=order(S.stocks,SO.s,val).map(function(i){var s=S.stocks[i];return s.g===g.k?f(s,i):""}).join('')});
@@ -295,9 +298,9 @@ function reb(c,A,tg,tp,Cq,pc){
   }else{$(p+"s2b").innerHTML="";$(p+"s2m").textContent="請至少給一個大於 0 的目標比例。"}
 }
 function calc(){
-  marks();var tp={},tc={},tg={},A=0;G.forEach(function(g){tp[g.k]=0;tc[g.k]=0;tg[g.k]=0});
+  marks();var tp={},tc={},tg={},A=0,xl={q:0,p:0,c:0};G.forEach(function(g){tp[g.k]=0;tc[g.k]=0;tg[g.k]=0});
   S.stocks.forEach(function(s,i){
-    var v=s.qty*(isCash(s)?1:s.price),c=s.qty*(isCash(s)?1:s.cost),pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;tc[s.g]=(tc[s.g]||0)+(isCash(s)?0:c*r);
+    var v=s.qty*(isCash(s)?1:s.price),c=s.qty*(isCash(s)?1:s.cost),pl=v-c,r=s.cur==="USD"?S.fx:1,sy=s.cur==="USD"?"US$ ":"";A+=v*r;tg[s.g]=(tg[s.g]||0)+v*r;tp[s.g]=(tp[s.g]||0)+pl*r;tc[s.g]=(tc[s.g]||0)+(isCash(s)?0:c*r);if(s.g==="stock"&&s.lv>1){xl.q+=v*r;xl.p+=pl*r;xl.c+=(isCash(s)?0:c*r)}
     $("sv"+i).closest("tr").classList.toggle("cashr",isCash(s));$("sv"+i).textContent=sy+fmt(v);$("st"+i).textContent=fmt(v*r);
     var el=$("sp"+i);el.textContent=(pl>=0?"+":"")+fmt(pl*r)+"（"+(c?(pl/c*100).toFixed(1):"0.0")+"%）";
     el.className=pl>=0?"up":"dn";
@@ -316,6 +319,7 @@ function calc(){
     ks.forEach(function(k){$("r_"+k).textContent=pc(tg[k],Cq);$("t_"+k).textContent=pc(tg[k],Cq);$("v_"+k).textContent=fmt(tg[k]);sp("p_"+k,tp[k],tc[k]);$("tv_"+k).textContent=fmt(tg[k]);sp("tp_"+k,tp[k],tc[k])});
     reb(c,A,tg,tp,Cq,pc);
   });
+  [["oproto",tg.proto+tg.tproto+tg.stock-xl.q,tp.proto+tp.tproto+tp.stock-xl.p,tc.proto+tc.tproto+tc.stock-xl.c],["olev",tg.lev+tg.tlev+xl.q,tp.lev+tp.tlev+xl.p,tc.lev+tc.tlev+xl.c],["ocash",tg.cash+tg.tcash,tp.cash+tp.tcash,tc.cash+tc.tcash]].forEach(function(x){$("t_"+x[0]).textContent=pc(x[1],A);$("tv_"+x[0]).textContent=fmt(x[1]);sp("tp_"+x[0],x[2],x[3])});
   sp("sPL",aP,aC);
   var D=0,I=0,P=0;
   S.debts.forEach(function(d,i){var it=d.bal*d.rate/100;D+=d.bal;I+=it;P+=+d.pay||0;$("di"+i).textContent=fmt(it)});
@@ -348,7 +352,7 @@ document.addEventListener("click",function(e){
   var t=e.target,del=t.getAttribute&&t.getAttribute("data-del"),ag=t.getAttribute&&t.getAttribute("data-add");
   var th=t.closest&&t.closest("th[data-sk]");
   if(th){var d2=th.getAttribute("data-t")==="d",so=d2?SO.d:SO.s,k=th.getAttribute("data-sk"),nw=so&&so.k===k?{k:k,d:-so.d}:{k:k,d:-1};if(d2)SO.d=nw;else SO.s=nw;quiet=true;rows();quiet=false;return}
-  if(ag){S.stocks.push({g:ag,sym:"",cur:"TWD",qty:0,cost:0,price:0});rows();return}
+  if(ag){S.stocks.push({g:ag,sym:"",cur:"TWD",lv:1,qty:0,cost:0,price:0});rows();return}
   if(del){(del==="s"?S.stocks:S.debts).splice(+t.getAttribute("data-i"),1);rows()}
 });
 
@@ -403,7 +407,7 @@ function bkRun(dlOnly){
   add("備份時間",ts);add("匯率 USD→TWD",S.fx);
   add("股票市值(台幣)",nm_("sAssets")[0]);n=nm_("sPL");add("股票總損益(台幣)",n[0]);add("股票總損益 %",n[1]);
   add("總負債",nm_("sDebt")[0]);add("淨值",nm_("sNet")[0]);add("股票市值/負債 %",nm_("sRatio")[0]);
-  [["stock","個股","整個資產"],["clec","CLEC","整個資產"],["clecw","CLEC-TW","整個資產"],["proto","原型","CLEC"],["lev","槓桿 x2","CLEC"],["cash","類現金","CLEC"],["tproto","TW 原型","CLEC-TW"],["tlev","TW 槓桿 x2","CLEC-TW"],["tcash","TW 類現金","CLEC-TW"]].forEach(function(g){
+  [["stock","個股","整個資產"],["clec","CLEC","整個資產"],["clecw","CLEC-TW","整個資產"],["proto","原型","CLEC"],["lev","槓桿 x2","CLEC"],["cash","類現金","CLEC"],["tproto","TW 原型","CLEC-TW"],["tlev","TW 槓桿 x2","CLEC-TW"],["tcash","TW 類現金","CLEC-TW"],["oproto","整體 原型","整個資產"],["olev","整體 槓桿","整個資產"],["ocash","整體 類現金","整個資產"]].forEach(function(g){
     add(g[1]+" 佔"+g[2]+" %",nm_("t_"+g[0])[0]);add(g[1]+" 市值",nm_("tv_"+g[0])[0]);n=nm_("tp_"+g[0]);add(g[1]+" 損益",n[0]);add(g[1]+" 損益 %",n[1]);
   });
   add("假設股票年報酬率 %",S.ret);add("預期年收益",nm_("gain")[0]);add("年利息支出",nm_("int")[0]);add("加權平均利率 %",nm_("wr")[0]);add("每月還款合計",nm_("pay")[0]);
@@ -425,7 +429,7 @@ function bkRun(dlOnly){
   bakReb("","",S);bakReb("w","TW ",S.w);
   var cs={cash:0,tcash:0};S.stocks.forEach(function(s){if(isCash(s)&&(s.g in cs))cs[s.g]+=s.qty*(s.cur==="USD"?S.fx:1)});add("類現金 其中現金",cs.cash);add("TW 類現金 其中現金",cs.tcash);
   S.stocks.forEach(function(s,i){var pf="持股"+(i+1)+" ";
-    add(pf+"群組",gn[s.g]||s.g);add(pf+"代號",s.sym);add(pf+"幣別",s.cur);add(pf+"股數",s.qty);add(pf+"成本價",s.cost);add(pf+"現價",s.price);
+    add(pf+"群組",gn[s.g]||s.g);add(pf+"代號",s.sym);add(pf+"幣別",s.cur);add(pf+"倍數",s.g==="stock"?(s.lv||1):"");add(pf+"股數",s.qty);add(pf+"成本價",s.cost);add(pf+"現價",s.price);
     add(pf+"市值(原幣)",nm_("sv"+i)[0]);var m=nm_("sp"+i);add(pf+"損益(台幣)",m[0]);add(pf+"損益 %",m[1]);add(pf+"折合台幣市值",nm_("st"+i)[0]);
   });
   S.debts.forEach(function(x,i){var pf="負債"+(i+1)+" ";
@@ -470,10 +474,11 @@ $("bk").onclick=function(){bkRun(false)};$("dk").onclick=function(){bkRun(true)}
   var FN="portfolio-backup.csv",FXG={"個股":"stock","原型":"proto","槓桿 x2":"lev","類現金":"cash","TW 原型":"tproto","TW 槓桿 x2":"tlev","TW 類現金":"tcash"},FX=null;
   function num(x,d){var v=parseFloat(x);return v===v?v:d}
   function has(x){return x!=null&&x!==""}
+  function lvOf(g,sym,col){var v=parseFloat(col);if(v>=1)return v;if(g!=="stock")return 1;var m=S.stocks.filter(function(x){return x.g==="stock"&&tick1(x.sym)===tick1(sym)})[0];return m&&m.lv>1?m.lv:1}
   function fxState(o){
     var T=JSON.parse(JSON.stringify(S)),st=[],i,g;
     for(i=1;i<=80;i++){g=o["持股"+i+" 群組"];if(!has(g))continue;if(!FXG[g])return null;
-      st.push({g:FXG[g],sym:o["持股"+i+" 代號"]||"",cur:o["持股"+i+" 幣別"]==="USD"?"USD":"TWD",qty:num(o["持股"+i+" 股數"],0),cost:num(o["持股"+i+" 成本價"],0),price:num(o["持股"+i+" 現價"],0)})}
+      st.push({g:FXG[g],sym:o["持股"+i+" 代號"]||"",cur:o["持股"+i+" 幣別"]==="USD"?"USD":"TWD",lv:lvOf(FXG[g],o["持股"+i+" 代號"],o["持股"+i+" 倍數"]),qty:num(o["持股"+i+" 股數"],0),cost:num(o["持股"+i+" 成本價"],0),price:num(o["持股"+i+" 現價"],0)})}
     if(!st.length)return null;
     T.stocks=st;T.fx=num(o["匯率 USD→TWD"],T.fx);T.ret=num(o["假設股票年報酬率 %"],T.ret);
     if(o["負債1 項目"]!==undefined){var ds=[];for(i=1;i<=30;i++){if(o["負債"+i+" 項目"]===undefined)break;if(!has(o["負債"+i+" 項目"])&&!has(o["負債"+i+" 餘額"]))continue;ds.push({name:o["負債"+i+" 項目"]||"",bal:num(o["負債"+i+" 餘額"],0),rate:num(o["負債"+i+" 年利率 %"],0),pay:num(o["負債"+i+" 月繳"],0)})}T.debts=ds}
