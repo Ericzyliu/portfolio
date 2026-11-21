@@ -33,6 +33,7 @@ input:focus{outline:2px solid var(--ac);outline-offset:0}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:6px 12px}
 button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
 button.x{padding:2px 8px;color:var(--mu)}
+.sb{display:inline-block;font-size:13px;padding:4px 10px;border-radius:999px;margin:-2px 0 8px;border:1px solid var(--bd);cursor:pointer}.sb.ok{color:var(--up);border-color:var(--up)}.sb.pend{color:#b7791f;border-color:#b7791f}.sb.err{color:#fff;background:var(--dn);border-color:var(--dn)}
 .up{color:var(--up)}.dn{color:var(--dn)}
 .bar{height:14px;border-radius:7px;background:var(--bd);overflow:hidden;margin:6px 0 10px}
 .bar i{display:block;height:100%;border-radius:7px}
@@ -73,6 +74,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
 <nav id="toc" aria-label="大綱"></nav>
 <main>
   <div class="bh" style="justify-content:space-between;margin-bottom:12px"><h1 style="margin:0">股票與負債總覽</h1><span style="display:flex;gap:8px;align-items:center"><span class="k" id="bkm"></span><button class="p" id="rf">更新報價</button><button class="p" id="bk">備份</button><button id="dk">下載</button></span></div>
+  <div class="sb pend" id="sb" title="點一下重新同步">同步狀態載入中…</div>
   <div class="k" id="rfs" style="margin:-4px 0 10px">按「更新報價」自動更新美股現價、台股收盤價與匯率</div>
   <div class="card row" style="margin-bottom:10px"><label for="fx">匯率 USD → TWD</label><input type="number" step="any" id="fx" style="width:110px"><span class="k">按「更新報價」會自動更新匯率，也可手動修改</span></div>
   <div class="grid">
@@ -140,7 +142,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-f</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-21-g</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -159,7 +161,9 @@ function tm(){return new Date().toLocaleTimeString("zh-TW")}
 function norm(o){if(!o.fx)o.fx=32;if(o.ret==null)o.ret=6;if(o.up==null)o.up=30;if(o.dn==null)o.dn=2;if(!o.st)o.st=1;if(!o.tr)o.tr={proto:50,lev:30,cash:20};if(o.nw==null)o.nw=0;if(!o.w)o.w={};var w=o.w;if(w.up==null)w.up=30;if(w.dn==null)w.dn=2;if(!w.st)w.st=1;if(!w.tr)w.tr={proto:50,lev:30,cash:20};if(w.nw==null)w.nw=0;o.stocks.forEach(function(s){if(!s.cur)s.cur="TWD";if(!s.g)s.g="stock";if(!(s.lv>1))s.lv=s.lv===3||s.lv===2?s.lv:1});return o}
 function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.stocks&&o.debts)return norm(o)}}catch(e){}return norm(JSON.parse(JSON.stringify(SAMPLE)))}
 var S=load(),quiet=false,synced=false,tmr=null;
-function setSync(t){$("sync").textContent=t+"（本頁已呼叫 GitHub "+reqN+" 次）"}
+function setSync(t){$("sync").textContent=t+"（本頁已呼叫 GitHub "+reqN+" 次）";
+  var b=$("sb"),c=/失敗|尚未|未設定|沒有/.test(t)?"err":/中…|編輯完/.test(t)?"pend":"ok";
+  b.className="sb "+c;b.textContent=t.replace(/^☁️ /,"☁️ ").replace(/，資料仍保存在這個裝置/,"")+(c==="err"?"　（點此重試）":"")}
 function save(){if(!quiet)S.updated=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!quiet)push()}
 
 /* ---------- GitHub Gist 同步 ---------- */
@@ -192,14 +196,17 @@ function createGist(){
   var f={};f[FILE]={content:JSON.stringify(S)};
   return ghf("/gists",{method:"POST",body:JSON.stringify({description:DESC,public:false,files:f})}).then(function(g){cfg.gid=g.id;saveCfg();return g.id});
 }
-function push(){
-  if(!cfg.gh||!synced||!cfg.gid)return;
-  setSync("同步中…");clearTimeout(tmr);
-  tmr=setTimeout(function(){
-    var f={};f[FILE]={content:JSON.stringify(S)};
-    ghf("/gists/"+cfg.gid,{method:"PATCH",body:JSON.stringify({files:f})}).then(function(){lastRu=S.updated||0;etag="";setSync("☁️ 已同步（"+tm()+"）")}).catch(function(e){setSync("同步失敗："+e.message+"，資料仍保存在這個裝置")});
-  },800);
+function doPush(ka){
+  var f={},u=S.updated||0;f[FILE]={content:JSON.stringify(S)};
+  return ghf("/gists/"+cfg.gid,{method:"PATCH",keepalive:!!ka,body:JSON.stringify({files:f})}).then(function(){lastRu=Math.max(lastRu,u);etag="";setSync("☁️ 已上傳到雲端（"+tm()+"）"+((S.updated||0)>u?"，之後又有新編輯":""))}).catch(function(e){setSync("上傳失敗，編輯尚未上傳："+e.message)});
 }
+function push(){
+  if(!cfg.gh){setSync("尚未設定 GitHub token，編輯只存在這個裝置，不會上傳");return}
+  if(!synced||!cfg.gid){setSync("尚未連上雲端，編輯尚未上傳，正在重試…");pull();return}
+  setSync("編輯尚未上傳，同步中…");clearTimeout(tmr);
+  tmr=setTimeout(function(){tmr=null;doPush()},800);
+}
+function flush(){if(tmr&&cfg.gh&&synced&&cfg.gid){clearTimeout(tmr);tmr=null;doPush(true)}}
 function editing(){var a=document.activeElement;return a&&a.tagName==="INPUT"&&a.id!=="ret"&&a.id!=="cgh"&&a.id!=="cfh"&&a.id!=="cfm"&&a.id!=="cbt"&&a.id!=="cbr"}
 function applyRemote(r){S=norm(JSON.parse(JSON.stringify(r)));quiet=true;$("ret").value=S.ret;$("fx").value=S.fx;rows();quiet=false}
 function pull(){
@@ -643,7 +650,8 @@ $("ret").value=S.ret;$("fx").value=S.fx;
 quiet=true;rows();quiet=false;
 pull();
 setInterval(function(){if(!document.hidden)pull()},120000);
-document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
+document.addEventListener("visibilitychange",function(){if(document.hidden)flush();else pull()});window.addEventListener("pagehide",flush);
+$("sb").onclick=function(){pull()};
 })();
 </script>
 </body>
