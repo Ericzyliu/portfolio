@@ -142,7 +142,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-23-b</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-23-c</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -618,9 +618,9 @@ function chartRows(){var m={},ks=[],all=CHR.live?CHR.rows.concat([CHR.live]):CHR
 function drawTop(el){
   var m={},A=0;
   S.stocks.forEach(function(s){var r=val(s,"tw");A+=r;if(isCash(s)||!(r>0))return;var k=String(s.sym||"").trim().split(/\s+/)[0].toUpperCase();if(!k)return;var e=m[k]||(m[k]={k:k,v:0,pl:0});e.v+=r;e.pl+=val(s,"pl")});
-  var L=Object.keys(m).map(function(k){return m[k]}).sort(function(a,b){return b.v-a.v}),T=L.slice(0,10),mx=T.length?T[0].v:1,sum=0;
+  var L=Object.keys(m).map(function(k){return m[k]}).sort(function(a,b){return b.v-a.v}),T=L,mx=T.length?T[0].v:1,sum=0;
   el.innerHTML=T.map(function(e,i){sum+=e.v;var w=Math.max(1,e.v/mx*100);return'<div style="display:grid;grid-template-columns:70px 1fr auto;gap:8px;align-items:center;margin:5px 0;font-size:13px"><span><b>'+(i+1)+'.</b> '+esc(e.k)+'</span><span style="background:var(--bd);border-radius:5px;height:14px;display:block"><i style="display:block;height:100%;width:'+w.toFixed(1)+'%;background:'+PAL[0]+';border-radius:5px"></i></span><span style="text-align:right;white-space:nowrap">'+FULL.wan(e.v)+'　<b>'+(A?(e.v/A*100).toFixed(1):"0.0")+'%</b></span></div>'}).join("")+
-   '<div class="k" style="margin-top:6px">前 '+T.length+' 名合計 '+FULL.wan(sum)+'，佔整個資產 '+(A?(sum/A*100).toFixed(1):"0.0")+'%（整個資產含類現金內的現金；現金不列入排名）。用目前畫面上的持股即時計算。</div>'}
+   '<div class="k" style="margin-top:6px">共 '+T.length+' 檔，合計 '+FULL.wan(sum)+'，佔整個資產 '+(A?(sum/A*100).toFixed(1):"0.0")+'%（整個資產含類現金內的現金；現金不列入）。用目前畫面上的持股即時計算。</div>'}
 function drawAll(){
   drawTop($("ch7"));
   var rows=chartRows(),sc=SCOPES[CHR.scope],cl=CLS[CHR.cl];
@@ -634,7 +634,7 @@ function drawAll(){
 function buildCharts(){
   var sel=function(id,arr,cur){return'<select id="'+id+'">'+arr.map(function(x,i){return'<option value="'+i+'"'+(i===cur?" selected":"")+'>'+x[0]+'</option>'}).join("")+'</select>'};
   var blk=function(t,id,extra,last){return'<div class="chwrap"'+(last?' style="margin-bottom:0"':'')+'><div class="bh"><b>'+t+'</b>'+(extra||"")+'</div><div id="'+id+'"></div></div>'};
-  $("chs").innerHTML='<div style="margin-top:12px"></div>'+blk("市值 ＋ 損益（台幣）","ch0",sel("chsc",SCOPES,CHR.scope))+blk("股票市值的組成：淨值 vs 總負債（%）＋ 股票市值 / 負債（%，右軸）","ch1")+blk("整體三類佔比（%）＋ 有效曝險倍數（右軸）","ch6")+blk("各部位佔整個資產（%）","ch3")+blk("各部位損益 %（損益 ÷ 成本）","ch4")+blk("CLEC 內各類損益 %（損益 ÷ 成本）","ch5",sel("chcl",CLS,CHR.cl))+blk("整個資產 TOP 10 持股（市值與佔比，同名合併）","ch7","",true);
+  $("chs").innerHTML='<div style="margin-top:12px"></div>'+blk("市值 ＋ 損益（台幣）","ch0",sel("chsc",SCOPES,CHR.scope))+blk("股票市值的組成：淨值 vs 總負債（%）＋ 股票市值 / 負債（%，右軸）","ch1")+blk("整體三類佔比（%）＋ 有效曝險倍數（右軸）","ch6")+blk("各部位佔整個資產（%）","ch3")+blk("各部位損益 %（損益 ÷ 成本）","ch4")+blk("CLEC 內各類損益 %（損益 ÷ 成本）","ch5",sel("chcl",CLS,CHR.cl))+blk("整個資產 持股排行（市值與佔比，同名合併）","ch7","",true);
   $("chsc").onchange=function(){CHR.scope=+$("chsc").value;drawAll()};
   $("chcl").onchange=function(){CHR.cl=+$("chcl").value;drawAll()};
   drawAll();
