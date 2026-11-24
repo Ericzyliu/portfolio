@@ -142,7 +142,7 @@ tr.cashr td:nth-child(-n+3) input,tr.cashr td:nth-child(-n+3) select{color:#e11d
     </div>
   </details>
 
-  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-24-a</div></div>
+  <div class="foot"><div id="sync" style="margin-bottom:6px"></div>按「更新報價」可更新現價與匯率。試算僅供參考，不構成投資建議。<div style="margin-top:4px">版本 2026-11-24-b</div></div>
 </main>
 <button id="totop" aria-label="回到最上面" title="回到最上面">↑</button>
 <script>
@@ -370,7 +370,15 @@ $("addD").onclick=function(){S.debts.push({name:"",bal:0,rate:0,pay:0});rows()};
 
 /* ---------- 報價 ---------- */
 var API_BASE_URL="https://finnhub.io/api/v1/quote?symbol=";
-var API_FOREX_URL="https://open.er-api.com/v6/latest/USD";
+var API_FOREX_URL="https://open.er-api.com/v6/latest/USD",API_FOREX_URL2="https://api.exchangerate.fun/latest";
+function getFx(){
+  function okr(v){return v>20&&v<45}
+  return fetch(API_FOREX_URL2).then(function(r){return r.json()}).then(function(d){
+    var v=d&&d.rates&&d.rates.TWD;if(!okr(v))throw new Error("bad");return{rate:v,t:d.timestamp,src:"每小時更新"}
+  }).catch(function(){
+    return fetch(API_FOREX_URL).then(function(r){return r.json()}).then(function(d){
+      var v=d&&d.rates&&d.rates.TWD;if(!okr(v))throw new Error("bad");return{rate:v,t:d.time_last_update_unix,src:"每天更新一次"}})})
+}
 var FINMIND_URL="https://api.finmindtrade.com/api/v4/data";
 var lastErr="";
 function tick(s){var y=String(s.sym||"").trim();if(/^(現金|CASH)/i.test(y))return"";return y.split(/\s+/)[0].toUpperCase()}
@@ -383,14 +391,13 @@ function tw(s,t,jobs,fail,hit){
     if(a&&a.length&&a[a.length-1].close>0){s.price=a[a.length-1].close;hit()}else fail.push(t)
   }).catch(function(e){lastErr=String(e&&e.message||e);fail.push(t)}));
 }
-function fxNote(d){var t=d.time_last_update_unix?new Date(d.time_last_update_unix*1000):null;$("fxs").textContent="來源每天更新一次"+(t?"，最近一次 "+(t.getMonth()+1)+"/"+t.getDate()+" "+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2):"")+"；也可手動修改"}
-function fxAuto(){fetch(API_FOREX_URL).then(function(r){return r.json()}).then(function(d){
-  if(d&&d.rates&&d.rates.TWD>0){fxNote(d);if(Math.abs(d.rates.TWD-S.fx)>1e-6){S.fx=d.rates.TWD;$("fx").value=S.fx.toFixed(3);calc()}}}).catch(function(){})}
+function fxNote(d){var t=d.t?new Date(d.t*1000):null;$("fxs").textContent="來源"+d.src+(t?"，最近一次 "+(t.getMonth()+1)+"/"+t.getDate()+" "+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2):"")+"；也可手動修改"}
+function fxAuto(){getFx().then(function(d){fxNote(d);if(Math.abs(d.rate-S.fx)>1e-6){S.fx=d.rate;$("fx").value=S.fx.toFixed(3);calc()}}).catch(function(){})}
 function refresh(){
   var b=$("rf"),st=$("rfs"),ok=0,fail=[],jobs=[];
   b.disabled=true;st.textContent="更新中…";lastErr="";
-  jobs.push(fetch(API_FOREX_URL).then(function(r){return r.json()}).then(function(d){
-    if(d&&d.rates&&d.rates.TWD>0){S.fx=d.rates.TWD;$("fx").value=S.fx.toFixed(3);fxNote(d);ok++}else fail.push("匯率")
+  jobs.push(getFx().then(function(d){
+    S.fx=d.rate;$("fx").value=S.fx.toFixed(3);fxNote(d);ok++
   }).catch(function(e){lastErr=String(e&&e.message||e);fail.push("匯率")}));
   S.stocks.forEach(function(s){
     var t=tick(s);if(!t)return;
